@@ -30,6 +30,9 @@ def final_score_combined(student_id, question_id, assessment_id):
     )
     final_marks = round(final_marks, 2)
 
+    # FIX — cap marks at max marks
+    final_marks = min(final_marks, total_marks)
+
     db.EvaluationResult.update_one(
         {"question_id": question_id, "student_id": student_id, "assessment_id": assessment_id},
         {"$set": {"suggested_marks": final_marks}},

@@ -203,11 +203,7 @@ export default function StudentAssessmentPage() {
                   value={answerText}
                   onChange={(e) => handleAnswerChange(questionId, e.target.value)}
                   placeholder="Write your answer here..."
-                  className={`w-full border-2 rounded-2xl p-5 focus:outline-none focus:ring-2 text-slate-900 transition ${
-                    isOverLimit
-                      ? "border-red-300 focus:ring-red-400"
-                      : "border-slate-200 focus:ring-blue-400"
-                  }`}
+                  className="w-full border-2 border-slate-200 rounded-2xl p-5 focus:outline-none focus:ring-2 focus:ring-blue-400 text-slate-900 transition"
                 />
 
                 {/* WORD COUNT */}
@@ -222,9 +218,6 @@ export default function StudentAssessmentPage() {
                     isOverLimit ? "text-red-500" : "text-slate-500"
                   }`}>
                     {wordCount} / {expectedLength > 0 ? expectedLength : "—"} words
-                    {isOverLimit && (
-                      <span className="ml-2 text-red-500">⚠ Over limit</span>
-                    )}
                   </p>
                 </div>
 
