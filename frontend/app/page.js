@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -49,7 +50,6 @@ export default function Home() {
     }
   ]);
 
-  // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogIndex, setDialogIndex] = useState(null);
   const [dialogData, setDialogData] = useState({
@@ -60,7 +60,6 @@ export default function Home() {
   const [showSubmissionDetails, setShowSubmissionDetails] = useState(false);
 
 
-  // UNSAVED CHANGES WARNING
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       if (activeSection === "Create Assessment" && title.trim()) {
@@ -73,7 +72,6 @@ export default function Home() {
   }, [activeSection, title]);
 
 
-  // HANDLE SECTION CHANGE
   const handleSectionChange = (newSection) => {
     if (activeSection === "Create Assessment" && newSection !== "Create Assessment") {
       const hasData = title.trim() || questions.some((q) => q.question?.trim());
@@ -88,7 +86,6 @@ export default function Home() {
   };
 
 
-  // AUTH CHECK
   useEffect(() => {
     const token = localStorage.getItem("token");
     const role = localStorage.getItem("userRole");
@@ -100,7 +97,6 @@ export default function Home() {
   }, []);
 
 
-  // LOAD AUTOSAVE
   useEffect(() => {
     const savedDraft = localStorage.getItem("assessmentDraft");
     if (savedDraft) {
@@ -127,7 +123,6 @@ export default function Home() {
   }, []);
 
 
-  // AUTOSAVE
   useEffect(() => {
     const hasContent = title.trim() || questions.some((q) => q.question?.trim());
     if (!hasContent) return;
@@ -141,13 +136,11 @@ export default function Home() {
   }, [title, subjectCode, subjectName, examDate, duration, instructions, availableFrom, availableTo, questions, selectedDepartments, selectedYears]);
 
 
-  // FETCH ASSESSMENTS
   useEffect(() => {
     fetchAssessments();
   }, []);
 
 
-  // LOAD SUBMISSIONS EVENT
   useEffect(() => {
     const handler = (event) => { fetchSubmissions(event.detail); };
     window.addEventListener("loadSubmissions", handler);
@@ -155,7 +148,6 @@ export default function Home() {
   }, []);
 
 
-  // REFETCH SUBMISSIONS WHEN RETURNING
   useEffect(() => {
     if (activeSection === "Submissions" && selectedAssessmentId) {
       fetchSubmissions(selectedAssessmentId);
@@ -241,7 +233,6 @@ export default function Home() {
   };
 
 
-  // RESET ALL FIELDS
   const resetFields = () => {
     setTitle(""); setSubjectCode(""); setSubjectName(""); setExamDate("");
     setDuration(""); setInstructions(""); setSelectedDepartments([]);
@@ -251,7 +242,6 @@ export default function Home() {
   };
 
 
-  // CREATE NEW ASSESSMENT
   const createNewAssessment = () => {
     const hasData = title.trim() || questions.some((q) => q.question?.trim());
     if (hasData) {
@@ -265,7 +255,6 @@ export default function Home() {
   };
 
 
-  // ADD QUESTION after index
   const addQuestionCard = (index) => {
     const newQuestion = { question_id: "", question: "", answer_key: "", rubric: "", marks: "", expected_length: "" };
     const updated = [...questions];
@@ -274,7 +263,6 @@ export default function Home() {
   };
 
 
-  // DELETE QUESTION
   const deleteQuestion = (index) => {
     if (questions.length === 1) {
       toast.error("At least one question is required");
@@ -285,7 +273,6 @@ export default function Home() {
   };
 
 
-  // OPEN DIALOG
   const openDialog = (index) => {
     setDialogIndex(index);
     setDialogData({ ...questions[index] });
@@ -293,7 +280,6 @@ export default function Home() {
   };
 
 
-  // SAVE DIALOG
   const saveDialog = () => {
     const q = dialogData;
     const qNum = dialogIndex + 1;
@@ -314,7 +300,6 @@ export default function Home() {
   };
 
 
-  // BUILD PAYLOAD
   const buildPayload = (status) => ({
     title, subjectCode, subjectName, examDate, duration, instructions,
     departments: selectedDepartments.map((d) => d.value),
@@ -327,7 +312,6 @@ export default function Home() {
   });
 
 
-  // VALIDATE FIELDS
   const validateFields = () => {
     if (!title.trim()) { toast.error("Fill assessment title"); return false; }
     if (!subjectCode.trim()) { toast.error("Fill subject code"); return false; }
@@ -356,7 +340,6 @@ export default function Home() {
   };
 
 
-  // SAVE ASSESSMENT
   const saveAssessment = async () => {
     if (!validateFields()) return;
     try {
@@ -381,7 +364,6 @@ export default function Home() {
   };
 
 
-  // PUBLISH ASSESSMENT
   const publishAssessment = async () => {
     if (!validateFields()) return;
     try {
@@ -411,7 +393,7 @@ export default function Home() {
       <div className="min-h-screen flex items-center justify-center bg-slate-100">
         <div className="text-center">
           <div className="w-14 h-14 border-4 border-slate-300 border-t-slate-900 rounded-full animate-spin mx-auto mb-6"></div>
-          <h2 className="text-2xl font-bold text-slate-900">Loading AssessPro</h2>
+          <h2 className="text-2xl font-bold text-slate-900">Loading acadAIsist</h2>
           <p className="text-slate-500 mt-2">Verifying authentication session...</p>
         </div>
       </div>
@@ -422,7 +404,6 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-slate-200 text-gray-900 flex">
 
-      {/* SIDEBAR */}
       <Sidebar
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
@@ -430,10 +411,8 @@ export default function Home() {
         setActiveSection={handleSectionChange}
       />
 
-      {/* MAIN CONTENT */}
       <div className={`w-full transition-all duration-300 ${sidebarOpen ? "ml-[240px]" : "ml-[80px]"}`}>
 
-        {/* NAVBAR */}
         <Navbar
           saveAssessment={saveAssessment}
           publishAssessment={publishAssessment}
@@ -444,7 +423,6 @@ export default function Home() {
           activeSection={activeSection}
         />
 
-        {/* PAGE CONTENT */}
         <div className="px-10 py-10">
 
           {/* DASHBOARD */}
@@ -470,29 +448,28 @@ export default function Home() {
               </div>
               <div className="mt-10">
                 <RecentActivity
-  savedAssessments={savedAssessments}
-  setActiveSection={setActiveSection}
-  setTitle={setTitle}
-  setQuestions={setQuestions}
-  setEditingAssessmentId={setEditingAssessmentId}
-  setSelectedAssessment={setSelectedAssessment}
-/>
+                  savedAssessments={savedAssessments}
+                  setActiveSection={setActiveSection}
+                  setTitle={setTitle}
+                  setQuestions={setQuestions}
+                  setEditingAssessmentId={setEditingAssessmentId}
+                  setSelectedAssessmentId={setSelectedAssessmentId}
+                />
+              </div>
             </div>
           )}
 
 
-          {/* ── CREATE ASSESSMENT ── */}
+          {/* CREATE ASSESSMENT */}
           {activeSection === "Create Assessment" && (
             <div className="flex flex-col gap-6">
 
-              {/* FIXED HEADER CARD — assessment details */}
               <div className="bg-white rounded-[30px] border border-slate-200 shadow-sm p-8">
                 <h2 className="text-3xl font-bold text-slate-900 mb-1">
                   {editingAssessmentId ? "Edit Assessment" : "Create Assessment"}
                 </h2>
                 <p className="text-slate-500 mb-8">Fill in the test details, then add questions below.</p>
 
-                {/* ROW 1: Title */}
                 <div className="mb-5">
                   <label className="block text-sm font-semibold text-slate-600 mb-2">Assessment Title</label>
                   <input
@@ -504,7 +481,6 @@ export default function Home() {
                   />
                 </div>
 
-                {/* ROW 2: Subject Code + Subject Name */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                   <div>
                     <label className="block text-sm font-semibold text-slate-600 mb-2">Subject Code</label>
@@ -528,7 +504,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* ROW 3: Department + Year */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                   <div>
                     <label className="block text-sm font-semibold text-slate-600 mb-2">Department</label>
@@ -560,7 +535,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* ROW 4: Date + Duration */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                   <div>
                     <label className="block text-sm font-semibold text-slate-600 mb-2">Date of Examination</label>
@@ -584,7 +558,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* ROW 5: Available From + To */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                   <div>
                     <label className="block text-sm font-semibold text-slate-600 mb-2">Available From</label>
@@ -608,7 +581,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* ROW 6: Instructions */}
                 <div>
                   <label className="block text-sm font-semibold text-slate-600 mb-2">Exam Instructions</label>
                   <textarea
@@ -621,7 +593,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* QUESTIONS CARD */}
               <div className="bg-white rounded-[30px] border border-slate-200 shadow-sm p-8">
                 <div className="flex items-center justify-between mb-6">
                   <div>
@@ -631,14 +602,11 @@ export default function Home() {
                   <span className="text-sm text-slate-400 font-medium">{questions.length} question{questions.length !== 1 ? "s" : ""}</span>
                 </div>
 
-                {/* QUESTION ROWS */}
                 <div className="space-y-2">
                   {questions.map((q, index) => {
                     const isFilled = q.question.trim() && q.answer_key.trim() && q.rubric.trim() && q.marks && q.expected_length.trim();
                     return (
                       <div key={index} className="flex items-center gap-3 group">
-
-                        {/* QUESTION ROW — clickable */}
                         <button
                           onClick={() => openDialog(index)}
                           className={`flex-1 flex items-center gap-4 px-5 py-4 rounded-2xl border text-left transition hover:shadow-md ${
@@ -647,32 +615,23 @@ export default function Home() {
                               : "bg-amber-50 border-amber-200 hover:border-amber-400"
                           }`}
                         >
-                          {/* Q number badge */}
                           <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${
                             isFilled ? "bg-slate-900 text-white" : "bg-amber-400 text-white"
                           }`}>
                             {index + 1}
                           </span>
-
-                          {/* Question preview */}
                           <span className={`flex-1 text-sm truncate ${isFilled ? "text-slate-700" : "text-amber-700 italic"}`}>
                             {q.question.trim() ? q.question : "Click to fill question details..."}
                           </span>
-
-                          {/* Marks badge */}
                           {q.marks && (
                             <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-lg flex-shrink-0">
                               {q.marks} marks
                             </span>
                           )}
-
-                          {/* Edit icon */}
                           <svg className="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                           </svg>
                         </button>
-
-                        {/* + button */}
                         <button
                           onClick={() => addQuestionCard(index)}
                           title="Add question after this"
@@ -680,8 +639,6 @@ export default function Home() {
                         >
                           +
                         </button>
-
-                        {/* × button */}
                         <button
                           onClick={() => deleteQuestion(index)}
                           title="Delete this question"
@@ -689,14 +646,12 @@ export default function Home() {
                         >
                           ×
                         </button>
-
                       </div>
                     );
                   })}
                 </div>
               </div>
 
-              {/* PREVIEW PANEL */}
               {showPreview && (
                 <PreviewPanel
                   title={title}
@@ -716,18 +671,14 @@ export default function Home() {
           )}
 
 
-          {/* ── QUESTION DIALOG ── */}
+          {/* QUESTION DIALOG */}
           {dialogOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-              {/* Backdrop */}
               <div
                 className="absolute inset-0 bg-black/40 backdrop-blur-sm"
                 onClick={() => setDialogOpen(false)}
               />
-
-              {/* Dialog box */}
               <div className="relative bg-white rounded-[30px] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 z-10">
-
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h3 className="text-2xl font-bold text-slate-900">Question {dialogIndex + 1}</h3>
@@ -741,7 +692,6 @@ export default function Home() {
                   </button>
                 </div>
 
-                {/* Question Text */}
                 <div className="mb-5">
                   <label className="block text-sm font-semibold text-slate-600 mb-2">Question</label>
                   <textarea
@@ -753,7 +703,6 @@ export default function Home() {
                   />
                 </div>
 
-                {/* Answer Key */}
                 <div className="mb-5">
                   <label className="block text-sm font-semibold text-slate-600 mb-2">Answer Key</label>
                   <textarea
@@ -765,7 +714,6 @@ export default function Home() {
                   />
                 </div>
 
-                {/* Rubric */}
                 <div className="mb-5">
                   <label className="block text-sm font-semibold text-slate-600 mb-2">Rubric</label>
                   <textarea
@@ -777,7 +725,6 @@ export default function Home() {
                   />
                 </div>
 
-                {/* Marks + Word Limit */}
                 <div className="grid grid-cols-2 gap-5 mb-8">
                   <div>
                     <label className="block text-sm font-semibold text-slate-600 mb-2">Marks</label>
@@ -810,7 +757,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Dialog Actions */}
                 <div className="flex gap-3">
                   <button
                     onClick={() => setDialogOpen(false)}
@@ -825,7 +771,6 @@ export default function Home() {
                     Save Question
                   </button>
                 </div>
-
               </div>
             </div>
           )}
