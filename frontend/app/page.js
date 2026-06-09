@@ -16,7 +16,7 @@ export default function Home() {
 
   const router = useRouter();
 
-  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [checkingAuth, setCheckingAuth] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeSection, setActiveSection] = useState("Dashboard");
   const [title, setTitle] = useState("");
@@ -84,13 +84,21 @@ export default function Home() {
 
 
   // AUTH CHECK — must be faculty role
+  // useEffect(() => {
+  //   const token = localStorage.getItem("token");
+  //   const role = localStorage.getItem("userRole");
+  //   if (!token || role !== "faculty") {
+  //     router.push("/login");
+  //   } else {
+  //     setCheckingAuth(false);
+  //   }
+  // }, []);
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     const role = localStorage.getItem("userRole");
     if (!token || role !== "faculty") {
       router.push("/login");
-    } else {
-      setCheckingAuth(false);
     }
   }, []);
 
@@ -454,17 +462,17 @@ export default function Home() {
 
 
   // LOADING SCREEN
-  if (checkingAuth) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-100">
-        <div className="text-center">
-          <div className="w-14 h-14 border-4 border-slate-300 border-t-slate-900 rounded-full animate-spin mx-auto mb-6"></div>
-          <h2 className="text-2xl font-bold text-slate-900">Loading AcadAIsist</h2>
-          <p className="text-slate-500 mt-2">Verifying authentication session...</p>
-        </div>
-      </div>
-    );
-  }
+  // if (checkingAuth) {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center bg-slate-100">
+  //       <div className="text-center">
+  //         <div className="w-14 h-14 border-4 border-slate-300 border-t-slate-900 rounded-full animate-spin mx-auto mb-6"></div>
+  //         <h2 className="text-2xl font-bold text-slate-900">Loading AcadAIsist</h2>
+  //         <p className="text-slate-500 mt-2">Verifying authentication session...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
 
   return (
