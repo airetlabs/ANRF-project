@@ -1,4 +1,5 @@
-# AssessPro – Academic Evaluation System
+# AcadAIsist: – A Small Language Model Based Lightweight and Accessible Evaluation Tool for
+Reducing Faculty Workload Without Compromising Academic Rigour
 
 A full stack academic evaluation platform for faculty members to create, manage, publish, and analyze assessments.
 

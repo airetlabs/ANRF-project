@@ -69,7 +69,7 @@ export default function Sidebar({
               <div>
 
                 <h1 className="text-2xl font-bold tracking-tight">
-                  AssessPro
+                  AcadAIsist
                 </h1>
 
                 <p className="text-slate-400 text-xs mt-1">

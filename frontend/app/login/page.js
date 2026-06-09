@@ -76,7 +76,7 @@ export default function LoginPage() {
         <div className="text-center mb-6">
           <div className="text-6xl mb-3">🔐</div>
           <h1 className="text-4xl font-bold text-slate-900">Welcome Back</h1>
-          <p className="text-slate-500 mt-2">Sign in to continue to AssessPro</p>
+          <p className="text-slate-500 mt-2">Sign in to continue to AcadAIsist</p>
         </div>
 
         <form onSubmit={loginUser} className="space-y-4">

@@ -3,7 +3,7 @@ import "./globals.css";
 import { Toaster } from "react-hot-toast";
 
 export const metadata = {
-  title: "AssessPro",
+  title: "AcadAIsist",
   description: "Faculty Assessment Platform",
 };
 
