@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
-import QuestionCard from "./components/QuestionCard";
 import AssessmentCard from "./components/AssessmentCard";
 import PreviewPanel from "./components/PreviewPanel";
 import AnalyticsChart from "./components/AnalyticsChart";
@@ -50,6 +49,12 @@ export default function Home() {
     }
   ]);
 
+  // Dialog state
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogIndex, setDialogIndex] = useState(null);
+  const [dialogData, setDialogData] = useState({
+    question: "", answer_key: "", rubric: "", marks: "", expected_length: ""
+  });
 
   const [submissionDetails, setSubmissionDetails] = useState([]);
   const [showSubmissionDetails, setShowSubmissionDetails] = useState(false);
@@ -83,7 +88,7 @@ export default function Home() {
   };
 
 
-  // AUTH CHECK — must be faculty role
+  // AUTH CHECK
   useEffect(() => {
     const token = localStorage.getItem("token");
     const role = localStorage.getItem("userRole");
@@ -122,11 +127,10 @@ export default function Home() {
   }, []);
 
 
-  // AUTOSAVE — only saves when there is actual content
+  // AUTOSAVE
   useEffect(() => {
     const hasContent = title.trim() || questions.some((q) => q.question?.trim());
     if (!hasContent) return;
-
     localStorage.setItem(
       "assessmentDraft",
       JSON.stringify({
@@ -145,74 +149,32 @@ export default function Home() {
 
   // LOAD SUBMISSIONS EVENT
   useEffect(() => {
-    const handler = (event) => {
-      fetchSubmissions(event.detail);
-    };
+    const handler = (event) => { fetchSubmissions(event.detail); };
     window.addEventListener("loadSubmissions", handler);
     return () => window.removeEventListener("loadSubmissions", handler);
   }, []);
 
 
-  // REFETCH SUBMISSIONS WHEN RETURNING FROM REVIEW PAGE
+  // REFETCH SUBMISSIONS WHEN RETURNING
   useEffect(() => {
     if (activeSection === "Submissions" && selectedAssessmentId) {
       fetchSubmissions(selectedAssessmentId);
     }
   }, [activeSection]);
 
-  // OPEN SUBMISSIONS PAGE AFTER RETURNING FROM REVIEW
-  useEffect(() => {
 
-    const openSubmissions =
-      localStorage.getItem("openSubmissions");
-
-    const savedAssessmentId =
-      localStorage.getItem(
-        "selectedAssessmentId"
-      );
-
-    if (
-      openSubmissions === "true" &&
-      savedAssessmentId
-    ) {
-
-      setActiveSection(
-        "Submissions"
-      );
-
-      setSelectedAssessmentId(
-        savedAssessmentId
-      );
-
-      fetchSubmissions(
-        savedAssessmentId
-      );
-
-      localStorage.removeItem(
-        "openSubmissions"
-      );
-
-    }
-
-    const handler = (event) => {
-      fetchSubmissions(event.detail);
-    };
-    window.addEventListener("loadSubmissions", handler);
-    return () => window.removeEventListener("loadSubmissions", handler);
-  }, []);
-
-
-  // OPEN SUBMISSIONS PAGE AFTER RETURNING FROM REVIEW
   useEffect(() => {
     const openSubmissions = localStorage.getItem("openSubmissions");
     const savedAssessmentId = localStorage.getItem("selectedAssessmentId");
-
     if (openSubmissions === "true" && savedAssessmentId) {
       setActiveSection("Submissions");
       setSelectedAssessmentId(savedAssessmentId);
       fetchSubmissions(savedAssessmentId);
       localStorage.removeItem("openSubmissions");
     }
+    const handler = (event) => { fetchSubmissions(event.detail); };
+    window.addEventListener("loadSubmissions", handler);
+    return () => window.removeEventListener("loadSubmissions", handler);
   }, []);
 
 
@@ -221,11 +183,7 @@ export default function Home() {
       const facultyEmail = localStorage.getItem("userEmail");
       const response = await fetch(`https://anrf-project-production.up.railway.app/assessment/all/${facultyEmail}`);
       const data = await response.json();
-      const sorted = [...data].sort((a, b) => {
-        if (a._id < b._id) return 1;
-        if (a._id > b._id) return -1;
-        return 0;
-      });
+      const sorted = [...data].sort((a, b) => (a._id < b._id ? 1 : -1));
       setSavedAssessments(sorted);
     } catch (error) {
       console.error(error);
@@ -249,31 +207,22 @@ export default function Home() {
 
 
   const evaluateSubmission = async (submissionId) => {
-
     setEvaluatingSubmission(submissionId);
-
     try {
       const response = await fetch(
         `https://anrf-project-production.up.railway.app/submission/evaluate/${submissionId}`,
         { method: "POST" }
       );
       const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.detail || "Evaluation failed");
-      }
+      if (!response.ok) throw new Error(data.detail || "Evaluation failed");
       alert("Evaluation Completed");
       fetchSubmissions(selectedAssessmentId);
     } catch (error) {
       console.error(error);
-
       alert("Evaluation Failed");
-
     } finally {
-
       setEvaluatingSubmission(null);
-
     }
-
   };
 
 
@@ -286,7 +235,6 @@ export default function Home() {
     } catch (error) {
       console.error(error);
       alert("Failed to load submission");
-      alert("Evaluation Failed");
     } finally {
       setEvaluatingSubmission(null);
     }
@@ -295,24 +243,10 @@ export default function Home() {
 
   // RESET ALL FIELDS
   const resetFields = () => {
-    setTitle("");
-    setSubjectCode("");
-    setSubjectName("");
-    setExamDate("");
-    setDuration("");
-    setInstructions("");
-    setSelectedDepartments([]);
-    setSelectedYears([]);
-    setAvailableFrom("");
-    setAvailableTo("");
-    setQuestions([{
-      question_id: "",
-      question: "",
-      answer_key: "",
-      rubric: "",
-      marks: "",
-      expected_length: ""
-    }]);
+    setTitle(""); setSubjectCode(""); setSubjectName(""); setExamDate("");
+    setDuration(""); setInstructions(""); setSelectedDepartments([]);
+    setSelectedYears([]); setAvailableFrom(""); setAvailableTo("");
+    setQuestions([{ question_id: "", question: "", answer_key: "", rubric: "", marks: "", expected_length: "" }]);
     setEditingAssessmentId(null);
   };
 
@@ -331,47 +265,62 @@ export default function Home() {
   };
 
 
-  // ADD QUESTION — inserts after current index
+  // ADD QUESTION after index
   const addQuestionCard = (index) => {
-    const newQuestion = {
-      question_id: "",
-      question: "",
-      answer_key: "",
-      rubric: "",
-      marks: "",
-      expected_length: ""
-    };
-    const updatedQuestions = [...questions];
-    updatedQuestions.splice(index + 1, 0, newQuestion);
-    setQuestions(updatedQuestions);
-  };
-
-
-  // UPDATE QUESTION
-  const updateQuestion = (index, field, value) => {
-    const updatedQuestions = [...questions];
-    updatedQuestions[index][field] = value;
-    setQuestions(updatedQuestions);
+    const newQuestion = { question_id: "", question: "", answer_key: "", rubric: "", marks: "", expected_length: "" };
+    const updated = [...questions];
+    updated.splice(index + 1, 0, newQuestion);
+    setQuestions(updated);
   };
 
 
   // DELETE QUESTION
   const deleteQuestion = (index) => {
-    const updatedQuestions = questions.filter((_, i) => i !== index);
-    setQuestions(updatedQuestions);
+    if (questions.length === 1) {
+      toast.error("At least one question is required");
+      return;
+    }
+    const updated = questions.filter((_, i) => i !== index);
+    setQuestions(updated);
+  };
+
+
+  // OPEN DIALOG
+  const openDialog = (index) => {
+    setDialogIndex(index);
+    setDialogData({ ...questions[index] });
+    setDialogOpen(true);
+  };
+
+
+  // SAVE DIALOG
+  const saveDialog = () => {
+    const q = dialogData;
+    const qNum = dialogIndex + 1;
+    if (!q.question.trim()) { toast.error(`Fill question text for Q${qNum}`); return; }
+    if (!q.answer_key.trim()) { toast.error(`Fill answer key for Q${qNum}`); return; }
+    if (!q.rubric.trim()) { toast.error(`Fill rubric for Q${qNum}`); return; }
+    if (!q.marks) { toast.error(`Fill marks for Q${qNum}`); return; }
+    const marksVal = parseInt(q.marks);
+    if (isNaN(marksVal) || marksVal < 1 || marksVal > 100) {
+      toast.error(`Marks must be between 1 and 100 for Q${qNum}`); return;
+    }
+    if (!q.expected_length.trim()) { toast.error(`Fill word limit for Q${qNum}`); return; }
+    const updated = [...questions];
+    updated[dialogIndex] = { ...updated[dialogIndex], ...q };
+    setQuestions(updated);
+    setDialogOpen(false);
+    toast.success(`Q${qNum} saved`);
   };
 
 
   // BUILD PAYLOAD
   const buildPayload = (status) => ({
     title, subjectCode, subjectName, examDate, duration, instructions,
-    departments: selectedDepartments.map((dept) => dept.value),
-    years: selectedYears.map((year) => year.value),
+    departments: selectedDepartments.map((d) => d.value),
+    years: selectedYears.map((y) => y.value),
     availableFrom, availableTo,
-    questions: questions.map((q, index) => ({
-      ...q,
-      question_id: q.question_id || index + 1,
-    })),
+    questions: questions.map((q, i) => ({ ...q, question_id: q.question_id || i + 1 })),
     id: editingAssessmentId,
     status,
     faculty_email: localStorage.getItem("userEmail")
@@ -380,24 +329,28 @@ export default function Home() {
 
   // VALIDATE FIELDS
   const validateFields = () => {
-    if (!title.trim()) {
-      toast.error("Assessment title is required");
-      return false;
-    }
-    if (questions.length === 0) {
-      toast.error("Please add at least one question");
-      return false;
-    }
-    for (let q of questions) {
-      if (!q.question.trim() || !q.answer_key.trim() || !q.rubric.trim() || !q.marks || !q.expected_length.trim()) {
-        toast.error("Please fill all question fields");
-        return false;
-      }
+    if (!title.trim()) { toast.error("Fill assessment title"); return false; }
+    if (!subjectCode.trim()) { toast.error("Fill subject code"); return false; }
+    if (!subjectName.trim()) { toast.error("Fill subject name"); return false; }
+    if (!examDate) { toast.error("Fill exam date"); return false; }
+    if (!duration.trim()) { toast.error("Fill total time / duration"); return false; }
+    if (selectedDepartments.length === 0) { toast.error("Select at least one department"); return false; }
+    if (selectedYears.length === 0) { toast.error("Select at least one year"); return false; }
+    if (!availableFrom) { toast.error("Fill available from date/time"); return false; }
+    if (!availableTo) { toast.error("Fill available to date/time"); return false; }
+    if (questions.length === 0) { toast.error("Add at least one question"); return false; }
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i];
+      const qNum = i + 1;
+      if (!q.question.trim()) { toast.error(`Fill question text for Q${qNum}`); return false; }
+      if (!q.answer_key.trim()) { toast.error(`Fill answer key for Q${qNum}`); return false; }
+      if (!q.rubric.trim()) { toast.error(`Fill rubric for Q${qNum}`); return false; }
+      if (!q.marks) { toast.error(`Fill marks for Q${qNum}`); return false; }
       const marksVal = parseInt(q.marks);
       if (isNaN(marksVal) || marksVal < 1 || marksVal > 100) {
-        toast.error("Marks must be between 1 and 100");
-        return false;
+        toast.error(`Marks must be between 1 and 100 for Q${qNum}`); return false;
       }
+      if (!q.expected_length.trim()) { toast.error(`Fill word limit for Q${qNum}`); return false; }
     }
     return true;
   };
@@ -414,7 +367,7 @@ export default function Home() {
         body: JSON.stringify(buildPayload("Draft"))
       });
       if (!response.ok) throw new Error("Failed to save");
-      toast.success("Assessment saved successfully");
+      toast.success("Assessment saved as draft");
       resetFields();
       localStorage.removeItem("assessmentDraft");
       fetchAssessments();
@@ -453,7 +406,6 @@ export default function Home() {
   };
 
 
-  // LOADING SCREEN
   if (checkingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-100">
@@ -499,28 +451,23 @@ export default function Home() {
           {activeSection === "Dashboard" && (
             <div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
                 <div className="bg-white rounded-[30px] p-7 border border-slate-200 shadow-sm">
                   <p className="text-slate-500 text-sm mb-2">Total Assessments</p>
                   <h2 className="text-5xl font-bold text-slate-900">{savedAssessments.length}</h2>
                 </div>
-
                 <div className="bg-white rounded-[30px] p-7 border border-slate-200 shadow-sm">
                   <p className="text-slate-500 text-sm mb-2">Draft Assessments</p>
                   <h2 className="text-5xl font-bold text-slate-900">
                     {savedAssessments.filter((a) => a.status === "Draft").length}
                   </h2>
                 </div>
-
                 <div className="bg-white rounded-[30px] p-7 border border-slate-200 shadow-sm">
                   <p className="text-slate-500 text-sm mb-2">Published Assessments</p>
                   <h2 className="text-5xl font-bold text-slate-900">
                     {savedAssessments.filter((a) => a.status === "Published").length}
                   </h2>
                 </div>
-
               </div>
-
               <div className="mt-10">
                 <RecentActivity savedAssessments={savedAssessments} />
               </div>
@@ -528,68 +475,63 @@ export default function Home() {
           )}
 
 
-          {/* CREATE ASSESSMENT */}
+          {/* ── CREATE ASSESSMENT ── */}
           {activeSection === "Create Assessment" && (
-            <div className="space-y-10">
+            <div className="flex flex-col gap-6">
 
-              <div className="bg-white rounded-[30px] border border-slate-200 p-10 mb-12 shadow-sm">
+              {/* FIXED HEADER CARD — assessment details */}
+              <div className="bg-white rounded-[30px] border border-slate-200 shadow-sm p-8">
+                <h2 className="text-3xl font-bold text-slate-900 mb-1">
+                  {editingAssessmentId ? "Edit Assessment" : "Create Assessment"}
+                </h2>
+                <p className="text-slate-500 mb-8">Fill in the test details, then add questions below.</p>
 
-                <div className="mb-10">
-                  <h2 className="text-4xl font-bold text-slate-900">
-                    {editingAssessmentId ? "Edit Assessment" : "Create Assessment"}
-                  </h2>
-                  <p className="text-slate-500 mt-3 text-lg">Build professional assessments for students</p>
-                </div>
-
-                {/* TITLE */}
-                <div className="mb-8">
-                  <label className="block text-sm font-semibold text-slate-600 mb-4">Assessment Title</label>
+                {/* ROW 1: Title */}
+                <div className="mb-5">
+                  <label className="block text-sm font-semibold text-slate-600 mb-2">Assessment Title</label>
                   <input
                     type="text"
                     placeholder="Enter assessment title"
-                    className="w-full border border-slate-200 bg-slate-50 p-5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition"
+                    className="w-full border border-slate-200 bg-slate-50 p-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                   />
                 </div>
 
-                {/* SUBJECT CODE & NAME */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                {/* ROW 2: Subject Code + Subject Name */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                   <div>
-                    <label className="block text-sm font-semibold text-slate-600 mb-4">Subject Code</label>
+                    <label className="block text-sm font-semibold text-slate-600 mb-2">Subject Code</label>
                     <input
                       type="text"
                       placeholder="e.g. CS301"
-                      className="w-full border border-slate-200 bg-slate-50 p-5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition"
+                      className="w-full border border-slate-200 bg-slate-50 p-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition"
                       value={subjectCode}
                       onChange={(e) => setSubjectCode(e.target.value)}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-slate-600 mb-4">Subject Name</label>
+                    <label className="block text-sm font-semibold text-slate-600 mb-2">Subject Name</label>
                     <input
                       type="text"
                       placeholder="e.g. Database Management Systems"
-                      className="w-full border border-slate-200 bg-slate-50 p-5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition"
+                      className="w-full border border-slate-200 bg-slate-50 p-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition"
                       value={subjectName}
                       onChange={(e) => setSubjectName(e.target.value)}
                     />
                   </div>
                 </div>
 
-                {/* DEPARTMENT & YEAR */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                {/* ROW 3: Department + Year */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                   <div>
-                    <label className="block text-sm font-semibold text-slate-600 mb-4">Department</label>
+                    <label className="block text-sm font-semibold text-slate-600 mb-2">Department</label>
                     <Select
                       isMulti
                       options={[
-                        { value: "CSE", label: "CSE" },
-                        { value: "IT", label: "IT" },
-                        { value: "AIDS", label: "AIDS" },
-                        { value: "ECE", label: "ECE" },
-                        { value: "EEE", label: "EEE" },
-                        { value: "MECH", label: "MECH" },
+                        { value: "CSE", label: "CSE" }, { value: "IT", label: "IT" },
+                        { value: "AIDS", label: "AIDS" }, { value: "ECE", label: "ECE" },
+                        { value: "EEE", label: "EEE" }, { value: "MECH", label: "MECH" },
                         { value: "CIVIL", label: "CIVIL" }
                       ]}
                       value={selectedDepartments}
@@ -598,14 +540,12 @@ export default function Home() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-slate-600 mb-4">Year</label>
+                    <label className="block text-sm font-semibold text-slate-600 mb-2">Year</label>
                     <Select
                       isMulti
                       options={[
-                        { value: "1", label: "1" },
-                        { value: "2", label: "2" },
-                        { value: "3", label: "3" },
-                        { value: "4", label: "4" }
+                        { value: "1", label: "1" }, { value: "2", label: "2" },
+                        { value: "3", label: "3" }, { value: "4", label: "4" }
                       ]}
                       value={selectedYears}
                       onChange={setSelectedYears}
@@ -614,80 +554,148 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* DATE & DURATION */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                {/* ROW 4: Date + Duration */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                   <div>
-                    <label className="block text-sm font-semibold text-slate-600 mb-4">Date of Examination</label>
+                    <label className="block text-sm font-semibold text-slate-600 mb-2">Date of Examination</label>
                     <input
                       type="date"
-                      className="w-full border border-slate-200 bg-slate-50 p-5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition text-slate-700"
+                      className="w-full border border-slate-200 bg-slate-50 p-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition text-slate-700"
                       value={examDate}
                       onChange={(e) => setExamDate(e.target.value)}
                       onKeyDown={(e) => e.preventDefault()}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-slate-600 mb-4">Total Time</label>
+                    <label className="block text-sm font-semibold text-slate-600 mb-2">Total Time</label>
                     <input
                       type="text"
                       placeholder="e.g. 90 Minutes"
-                      className="w-full border border-slate-200 bg-slate-50 p-5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition"
+                      className="w-full border border-slate-200 bg-slate-50 p-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition"
                       value={duration}
                       onChange={(e) => setDuration(e.target.value)}
                     />
                   </div>
                 </div>
 
-                {/* AVAILABLE FROM & TO */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                {/* ROW 5: Available From + To */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                   <div>
-                    <label className="block text-sm font-semibold text-slate-600 mb-4">Available From</label>
+                    <label className="block text-sm font-semibold text-slate-600 mb-2">Available From</label>
                     <input
                       type="datetime-local"
                       value={availableFrom}
                       onChange={(e) => setAvailableFrom(e.target.value)}
                       onKeyDown={(e) => e.preventDefault()}
-                      className="w-full border border-slate-200 bg-slate-50 p-5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition"
+                      className="w-full border border-slate-200 bg-slate-50 p-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-slate-600 mb-4">Available To</label>
+                    <label className="block text-sm font-semibold text-slate-600 mb-2">Available To</label>
                     <input
                       type="datetime-local"
                       value={availableTo}
                       onChange={(e) => setAvailableTo(e.target.value)}
                       onKeyDown={(e) => e.preventDefault()}
-                      className="w-full border border-slate-200 bg-slate-50 p-5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition"
+                      className="w-full border border-slate-200 bg-slate-50 p-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition"
                     />
                   </div>
                 </div>
 
-                {/* INSTRUCTIONS */}
-                <div className="mb-10">
-                  <label className="block text-sm font-semibold text-slate-600 mb-4">Exam Instructions</label>
+                {/* ROW 6: Instructions */}
+                <div>
+                  <label className="block text-sm font-semibold text-slate-600 mb-2">Exam Instructions</label>
                   <textarea
-                    rows={5}
+                    rows={3}
                     placeholder="Enter exam instructions for students"
-                    className="w-full border border-slate-200 bg-slate-50 p-5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition resize-none text-slate-700"
+                    className="w-full border border-slate-200 bg-slate-50 p-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition resize-none text-slate-700"
                     value={instructions}
                     onChange={(e) => setInstructions(e.target.value)}
                   />
                 </div>
+              </div>
 
-                {/* QUESTIONS */}
-                <div className="space-y-8">
-                  {questions.map((q, index) => (
-                    <QuestionCard
-                      key={index}
-                      q={q}
-                      index={index}
-                      addQuestionCard={addQuestionCard}
-                      deleteQuestion={deleteQuestion}
-                      updateQuestion={updateQuestion}
-                    />
-                  ))}
+              {/* QUESTIONS CARD */}
+              <div className="bg-white rounded-[30px] border border-slate-200 shadow-sm p-8">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-900">Questions</h3>
+                    <p className="text-slate-500 text-sm mt-1">Click a question to edit its details. Use + to insert after.</p>
+                  </div>
+                  <span className="text-sm text-slate-400 font-medium">{questions.length} question{questions.length !== 1 ? "s" : ""}</span>
                 </div>
 
+                {/* QUESTION ROWS */}
+                <div className="space-y-2">
+                  {questions.map((q, index) => {
+                    const isFilled = q.question.trim() && q.answer_key.trim() && q.rubric.trim() && q.marks && q.expected_length.trim();
+                    return (
+                      <div key={index} className="flex items-center gap-3 group">
+
+                        {/* QUESTION ROW — clickable */}
+                        <button
+                          onClick={() => openDialog(index)}
+                          className={`flex-1 flex items-center gap-4 px-5 py-4 rounded-2xl border text-left transition hover:shadow-md ${
+                            isFilled
+                              ? "bg-slate-50 border-slate-200 hover:border-slate-400"
+                              : "bg-amber-50 border-amber-200 hover:border-amber-400"
+                          }`}
+                        >
+                          {/* Q number badge */}
+                          <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${
+                            isFilled ? "bg-slate-900 text-white" : "bg-amber-400 text-white"
+                          }`}>
+                            {index + 1}
+                          </span>
+
+                          {/* Question preview */}
+                          <span className={`flex-1 text-sm truncate ${isFilled ? "text-slate-700" : "text-amber-700 italic"}`}>
+                            {q.question.trim() ? q.question : "Click to fill question details..."}
+                          </span>
+
+                          {/* Marks badge */}
+                          {q.marks && (
+                            <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-lg flex-shrink-0">
+                              {q.marks} marks
+                            </span>
+                          )}
+
+                          {/* Edit icon */}
+                          <svg className="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                          </svg>
+                        </button>
+
+                        {/* + button */}
+                        <button
+                          onClick={() => addQuestionCard(index)}
+                          title="Add question after this"
+                          className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-900 hover:text-white text-slate-600 flex items-center justify-center transition font-bold text-lg flex-shrink-0"
+                        >
+                          +
+                        </button>
+
+                        {/* × button */}
+                        <button
+                          onClick={() => deleteQuestion(index)}
+                          title="Delete this question"
+                          className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-red-500 hover:text-white text-slate-600 flex items-center justify-center transition font-bold text-lg flex-shrink-0"
+                        >
+                          ×
+                        </button>
+
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* ADD FIRST / ADD BOTTOM BUTTON */}
+                <button
+                  onClick={() => addQuestionCard(questions.length - 1)}
+                  className="mt-5 w-full py-3 rounded-2xl border-2 border-dashed border-slate-300 text-slate-500 hover:border-slate-400 hover:text-slate-700 transition text-sm font-medium"
+                >
+                  + Add Question
+                </button>
               </div>
 
               {/* PREVIEW PANEL */}
@@ -706,7 +714,121 @@ export default function Home() {
                   questions={questions}
                 />
               )}
+            </div>
+          )}
 
+
+          {/* ── QUESTION DIALOG ── */}
+          {dialogOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              {/* Backdrop */}
+              <div
+                className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                onClick={() => setDialogOpen(false)}
+              />
+
+              {/* Dialog box */}
+              <div className="relative bg-white rounded-[30px] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 z-10">
+
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="text-2xl font-bold text-slate-900">Question {dialogIndex + 1}</h3>
+                    <p className="text-slate-500 text-sm mt-1">Fill all fields to complete this question</p>
+                  </div>
+                  <button
+                    onClick={() => setDialogOpen(false)}
+                    className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 text-xl font-bold transition"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                {/* Question Text */}
+                <div className="mb-5">
+                  <label className="block text-sm font-semibold text-slate-600 mb-2">Question</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Enter the question"
+                    className="w-full border border-slate-200 bg-slate-50 p-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition resize-none"
+                    value={dialogData.question}
+                    onChange={(e) => setDialogData({ ...dialogData, question: e.target.value })}
+                  />
+                </div>
+
+                {/* Answer Key */}
+                <div className="mb-5">
+                  <label className="block text-sm font-semibold text-slate-600 mb-2">Answer Key</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Enter the model answer / answer key"
+                    className="w-full border border-slate-200 bg-slate-50 p-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition resize-none"
+                    value={dialogData.answer_key}
+                    onChange={(e) => setDialogData({ ...dialogData, answer_key: e.target.value })}
+                  />
+                </div>
+
+                {/* Rubric */}
+                <div className="mb-5">
+                  <label className="block text-sm font-semibold text-slate-600 mb-2">Rubric</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Enter the grading rubric (e.g. 1 mark for definition, 1 mark for example)"
+                    className="w-full border border-slate-200 bg-slate-50 p-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition resize-none"
+                    value={dialogData.rubric}
+                    onChange={(e) => setDialogData({ ...dialogData, rubric: e.target.value })}
+                  />
+                </div>
+
+                {/* Marks + Word Limit */}
+                <div className="grid grid-cols-2 gap-5 mb-8">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-600 mb-2">Marks</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="100"
+                      placeholder="e.g. 5"
+                      className="w-full border border-slate-200 bg-slate-50 p-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition"
+                      value={dialogData.marks}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        if (e.target.value === "") { setDialogData({ ...dialogData, marks: "" }); return; }
+                        if (val < 1) { toast.error("Marks cannot be less than 1"); return; }
+                        if (val > 100) { toast.error("Marks cannot exceed 100"); return; }
+                        setDialogData({ ...dialogData, marks: e.target.value });
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-600 mb-2">Word Limit</label>
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="e.g. 150"
+                      className="w-full border border-slate-200 bg-slate-50 p-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition"
+                      value={dialogData.expected_length}
+                      onChange={(e) => setDialogData({ ...dialogData, expected_length: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                {/* Dialog Actions */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setDialogOpen(false)}
+                    className="flex-1 py-4 rounded-2xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition font-semibold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={saveDialog}
+                    className="flex-1 py-4 rounded-2xl bg-slate-900 text-white hover:bg-slate-800 transition font-semibold"
+                  >
+                    Save Question
+                  </button>
+                </div>
+
+              </div>
             </div>
           )}
 
@@ -734,10 +856,7 @@ export default function Home() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                 {savedAssessments
-                  .filter((assessment) =>
-                    assessment.status === "Draft" &&
-                    assessment.title.toLowerCase().includes(searchTerm.toLowerCase())
-                  )
+                  .filter((a) => a.status === "Draft" && a.title.toLowerCase().includes(searchTerm.toLowerCase()))
                   .map((assessment) => (
                     <AssessmentCard
                       key={assessment._id}
@@ -772,10 +891,7 @@ export default function Home() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                 {savedAssessments
-                  .filter((assessment) =>
-                    assessment.status === "Published" &&
-                    assessment.title.toLowerCase().includes(searchTerm.toLowerCase())
-                  )
+                  .filter((a) => a.status === "Published" && a.title.toLowerCase().includes(searchTerm.toLowerCase()))
                   .map((assessment) => (
                     <AssessmentCard
                       key={assessment._id}
@@ -818,7 +934,6 @@ export default function Home() {
                 <h2 className="text-4xl font-bold text-slate-900 mb-3">Student Submissions</h2>
                 <p className="text-slate-500 text-lg">Assessment ID: {selectedAssessmentId}</p>
               </div>
-
               {loadingSubmissions ? (
                 <div className="bg-white rounded-3xl p-8">Loading submissions...</div>
               ) : (
@@ -838,48 +953,32 @@ export default function Home() {
                       <tbody>
                         {assessmentSubmissions.map((submission) => (
                           <tr key={submission.submission_id} className="border-t">
-
                             <td className="p-4">{submission.student_id}</td>
-
                             <td className="p-4">{submission.student_email}</td>
-
                             <td className="p-4">{submission.status}</td>
-
                             <td className="p-4 font-semibold text-[#071330]">
                               {submission.final_marks > 0 ? submission.final_marks : "-"}
                             </td>
-
                             <td className="p-4">
                               <button
                                 onClick={() => {
-
-                                  localStorage.setItem(
-                                    "selectedAssessmentId",
-                                    selectedAssessmentId
-                                  );
-
-                                  router.push(
-                                    `/assessment-review/${submission.submission_id}`
-                                  );
-
+                                  localStorage.setItem("selectedAssessmentId", selectedAssessmentId);
+                                  router.push(`/assessment-review/${submission.submission_id}`);
                                 }}
                                 className="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg"
                               >
                                 View
                               </button>
                             </td>
-
                             <td className="p-4">
                               <button
-                                disabled={
-                                  submission.status === "Evaluated" ||
-                                  evaluatingSubmission === submission.submission_id
-                                }
+                                disabled={submission.status === "Evaluated" || evaluatingSubmission === submission.submission_id}
                                 onClick={() => evaluateSubmission(submission.submission_id)}
-                                className={`px-4 py-2 rounded-lg text-white ${submission.status === "Evaluated"
-                                  ? "bg-green-600 cursor-not-allowed"
-                                  : "bg-blue-600 hover:bg-blue-700"
-                                  }`}
+                                className={`px-4 py-2 rounded-lg text-white ${
+                                  submission.status === "Evaluated"
+                                    ? "bg-green-600 cursor-not-allowed"
+                                    : "bg-blue-600 hover:bg-blue-700"
+                                }`}
                               >
                                 {evaluatingSubmission === submission.submission_id
                                   ? "Evaluating..."
@@ -888,13 +987,11 @@ export default function Home() {
                                     : "Evaluate"}
                               </button>
                             </td>
-
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
-
                   {showSubmissionDetails && (
                     <div className="mt-8 bg-white p-6 rounded-3xl shadow">
                       <h2 className="text-2xl font-bold mb-6">Submission Details</h2>
