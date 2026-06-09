@@ -469,8 +469,14 @@ export default function Home() {
                 </div>
               </div>
               <div className="mt-10">
-                <RecentActivity savedAssessments={savedAssessments} setActiveSection={handleSectionChange} />
-              </div>
+                <RecentActivity
+  savedAssessments={savedAssessments}
+  setActiveSection={setActiveSection}
+  setTitle={setTitle}
+  setQuestions={setQuestions}
+  setEditingAssessmentId={setEditingAssessmentId}
+  setSelectedAssessment={setSelectedAssessment}
+/>
             </div>
           )}
 
