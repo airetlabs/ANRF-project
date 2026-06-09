@@ -688,14 +688,6 @@ export default function Home() {
                     );
                   })}
                 </div>
-
-                {/* ADD FIRST / ADD BOTTOM BUTTON */}
-                <button
-                  onClick={() => addQuestionCard(questions.length - 1)}
-                  className="mt-5 w-full py-3 rounded-2xl border-2 border-dashed border-slate-300 text-slate-500 hover:border-slate-400 hover:text-slate-700 transition text-sm font-medium"
-                >
-                  + Add Question
-                </button>
               </div>
 
               {/* PREVIEW PANEL */}
@@ -957,7 +949,7 @@ export default function Home() {
                             <td className="p-4">{submission.student_email}</td>
                             <td className="p-4">{submission.status}</td>
                             <td className="p-4 font-semibold text-[#071330]">
-                              {submission.final_marks > 0 ? submission.final_marks : "-"}
+                              {submission.final_marks > 0 ? Math.round(submission.final_marks) : "-"}
                             </td>
                             <td className="p-4">
                               <button
