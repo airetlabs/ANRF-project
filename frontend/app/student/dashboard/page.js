@@ -41,7 +41,7 @@ export default function StudentDashboard() {
       const email = localStorage.getItem("userEmail");
 
       const assessmentResponse = await fetch(
-        `https://anrf-project-production.up.railway.app/assessment/student/${department}/${year}`
+        `https://anrf-project-production-a47a.up.railway.app/assessment/student/${department}/${year}`
       );
       const assessmentData = await assessmentResponse.json();
 
@@ -54,7 +54,7 @@ export default function StudentDashboard() {
       setAssessments(sorted);
 
       const submissionResponse = await fetch(
-        `https://anrf-project-production.up.railway.app/submission/student/${email}`
+        `https://anrf-project-production-a47a.up.railway.app/submission/student/${email}`
       );
       const submissionData = await submissionResponse.json();
       const submittedAssessmentIds = submissionData.map(

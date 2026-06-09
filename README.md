@@ -105,7 +105,7 @@ uvicorn main:app --reload
 Backend runs on:
 
 ```bash
-anrf-project-production.up.railway.app
+anrf-project-production-a47a.up.railway.app
 Deploying....
 ```
 
@@ -123,5 +123,5 @@ Password: admin123
 # API Documentation
 
 ```bash
-anrf-project-production.up.railway.app/docs
+anrf-project-production-a47a.up.railway.app/docs
 ```

@@ -51,7 +51,7 @@ export default function RegisterPage() {
         year,
       };
 
-      const response = await fetch("https://anrf-project-production.up.railway.app/auth/register", {
+      const response = await fetch("https://anrf-project-production-a47a.up.railway.app/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

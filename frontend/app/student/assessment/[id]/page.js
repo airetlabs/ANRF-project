@@ -36,8 +36,8 @@ export default function StudentAssessmentPage() {
   const fetchAssessment = async () => {
     try {
       const [assessmentRes, questionsRes] = await Promise.all([
-        fetch(`https://anrf-project-production.up.railway.app/assessment/view/${params.id}`),
-        fetch(`https://anrf-project-production.up.railway.app/assessment/questions/${params.id}`),
+        fetch(`https://anrf-project-production-a47a.up.railway.app/assessment/view/${params.id}`),
+        fetch(`https://anrf-project-production-a47a.up.railway.app/assessment/questions/${params.id}`),
       ]);
       const data = await assessmentRes.json();
       const questionData = await questionsRes.json();
@@ -71,7 +71,7 @@ export default function StudentAssessmentPage() {
         return;
       }
 
-      const response = await fetch("https://anrf-project-production.up.railway.app/submission/submit", {
+      const response = await fetch("https://anrf-project-production-a47a.up.railway.app/submission/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
