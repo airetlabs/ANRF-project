@@ -846,7 +846,7 @@ export default function Home() {
                             <td className="p-4">{submission.status}</td>
 
                             <td className="p-4 font-semibold text-[#071330]">
-                              {submission.final_marks > 0 ? submission.final_marks : "-"}
+                              {submission.final_marks > 0 ? Math.round(submission.final_marks) : "-"}
                             </td>
 
                             <td className="p-4">
@@ -872,18 +872,20 @@ export default function Home() {
                             <td className="p-4">
                               <button
                                 disabled={
-                                  submission.status === "Evaluated" ||
+                                  (submission.status === "Evaluated" || submission.status === "Finalized") ||
                                   evaluatingSubmission === submission.submission_id
                                 }
                                 onClick={() => evaluateSubmission(submission.submission_id)}
-                                className={`px-4 py-2 rounded-lg text-white ${submission.status === "Evaluated"
+                                className={`px-4 py-2 rounded-lg text-white ${(submission.status === "Evaluated" || submission.status === "Finalized")
                                   ? "bg-green-600 cursor-not-allowed"
+                                  : evaluatingSubmission === submission.submission_id
+                                  ? "bg-blue-400 cursor-not-allowed"
                                   : "bg-blue-600 hover:bg-blue-700"
                                   }`}
                               >
                                 {evaluatingSubmission === submission.submission_id
                                   ? "Evaluating..."
-                                  : submission.status === "Evaluated"
+                                  : (submission.status === "Evaluated" || submission.status === "Finalized")
                                     ? "Evaluated"
                                     : "Evaluate"}
                               </button>

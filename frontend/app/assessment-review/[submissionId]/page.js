@@ -238,7 +238,7 @@ export default function AssessmentReviewPage() {
                             <div>
                                 <p className="text-slate-400 text-sm">Final Assessment Marks</p>
                                 <p className="text-3xl font-bold mt-1">
-                                    {Math.round(finalTotal * 100) / 100}
+                                    {Math.round(finalTotal)}
                                 </p>
                             </div>
                             <button

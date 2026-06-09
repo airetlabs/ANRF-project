@@ -170,7 +170,7 @@ def get_submissions_by_assessment(assessment_id: str):
             "student_email": submission["student_email"],
             "status": submission.get("status", "Pending Evaluation"),
             "submitted_at": submission["submitted_at"],
-            "final_marks": round(total_marks, 2)
+            "final_marks": round(total_marks)
         })
 
     return result
@@ -406,7 +406,7 @@ def save_correction(data: dict):
         {"_id": ObjectId(data["submission_id"])},
         {"$set": {
             "status": "Finalized",
-            "final_marks": round(total, 2)
+            "final_marks": round(total)
         }}
     )
 
