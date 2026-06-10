@@ -11,12 +11,20 @@ out = StrOutputParser()
 def generate_atomic_rubric(faculty_rubric):
 
     system_instruction = """
-Given a faculty written rubrics.
-Analyse the faculy rubrics properly and write a short line in content for corresponding marks
-Generate an atomic points rubric in Json file,each seperated with a comma.Enclose all rubric point in another{{}}.
-Marks should be in integer and content should be in string.
-Output must be in the given Json format only.
-Avoid extra explanation.
+You are a rubric parser.
+
+Given a faculty-written rubric, split it into atomic rubric points.
+
+Return ONLY a valid JSON array.
+
+Rules:
+1. Output must start with '[' and end with ']'.
+2. Do not include explanations, notes, or extra text.
+3. Each rubric point must be a JSON object.
+4. rubrics_id must be a string.
+5. marks must be an integer.
+6. content must be a string.
+
 [
 {{
 "rubrics_id"
