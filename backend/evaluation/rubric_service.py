@@ -15,7 +15,8 @@ Given a faculty written rubrics.
 Analyse the faculy rubrics properly and write a short line in content for corresponding marks
 Generate an atomic points rubric in Json file,each seperated with a comma.Enclose all rubric point in another{{}}.
 Marks should be in integer and content should be in string.
-Output must be in the given Json format only,Avoid extra explanation.
+Output must be in the given Json format only.
+Avoid extra explanation.
 [
 {{
 "rubrics_id"
@@ -37,6 +38,9 @@ Output must be in the given Json format only,Avoid extra explanation.
     chain = prompt_rubric | model | out
     response = chain.invoke({})
     response = json.loads(response)
+    print("--------------------------------------------------------------------------")
+    print(response)
+    print("--------------------------------------------------------------------------")
     verified_rubric = [SingleRubric(**rubric) for rubric in response]
     dict_data = [obj.model_dump() for obj in verified_rubric]
     return dict_data
