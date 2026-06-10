@@ -462,17 +462,17 @@ export default function Home() {
 
 
   // LOADING SCREEN
-  // if (checkingAuth) {
-  //   return (
-  //     <div className="min-h-screen flex items-center justify-center bg-slate-100">
-  //       <div className="text-center">
-  //         <div className="w-14 h-14 border-4 border-slate-300 border-t-slate-900 rounded-full animate-spin mx-auto mb-6"></div>
-  //         <h2 className="text-2xl font-bold text-slate-900">Loading AcadAIsist</h2>
-  //         <p className="text-slate-500 mt-2">Verifying authentication session...</p>
-  //       </div>
-  //     </div>
-  //   );
-  // }
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-100">
+        <div className="text-center">
+          <div className="w-14 h-14 border-4 border-slate-300 border-t-slate-900 rounded-full animate-spin mx-auto mb-6"></div>
+          <h2 className="text-2xl font-bold text-slate-900">Loading AcadAIsist</h2>
+          <p className="text-slate-500 mt-2">Verifying authentication session...</p>
+        </div>
+      </div>
+    );
+  }
 
 
   return (
