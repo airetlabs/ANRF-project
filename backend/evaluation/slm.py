@@ -10,4 +10,4 @@ if not _api_key:
         "and add your Groq API key."
     )
 
-model = ChatGroq(model="llama-3.1-8b-instant", temperature=0)
+model = ChatGroq(model="llama-3.3-70b-versatile", temperature=0)
