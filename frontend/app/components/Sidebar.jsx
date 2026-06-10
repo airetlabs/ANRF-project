@@ -44,20 +44,8 @@ export default function Sidebar({
           <div className="flex items-center justify-between mb-10">
             {sidebarOpen && (
               <div>
-<<<<<<< HEAD
-
-                <h1 className="text-2xl font-bold tracking-tight">
-                  AcadAIsist
-                </h1>
-
-                <p className="text-slate-400 text-xs mt-1">
-                  Faculty Platform
-                </p>
-
-=======
-                <h1 className="text-xl font-bold tracking-tight">acadAIsist</h1>
+                <h1 className="text-xl font-bold tracking-tight">AcadAIsist</h1>
                 <p className="text-slate-400 text-xs mt-1">Faculty Platform</p>
->>>>>>> origin/madhu-work-v2
               </div>
             )}
             <button

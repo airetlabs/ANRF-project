@@ -38,13 +38,7 @@ export default function Navbar({
 
       {/* LEFT */}
       <div>
-<<<<<<< HEAD
-        <h1 className="text-2xl font-bold text-slate-900">
-          AcadAIsist
-        </h1>
-=======
-        <h1 className="text-2xl font-bold text-slate-900">acadAIsist</h1>
->>>>>>> origin/madhu-work-v2
+        <h1 className="text-2xl font-bold text-slate-900">AcadAIsist</h1>
         <p className="text-slate-500 text-sm mt-1">
           A Small Language Model Based Lightweight and Accessible Evaluation Tool for Reducing Faculty Workload Without Compromising Academic Rigour
         </p>
