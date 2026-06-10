@@ -37,6 +37,9 @@ Avoid extra explanation.
     ])
     chain = prompt_rubric | model | out
     response = chain.invoke({})
+    print("--------------------------------------------------------------------------")
+    print(response)
+    print("--------------------------------------------------------------------------")
     response = json.loads(response)
     print("--------------------------------------------------------------------------")
     print(response)
