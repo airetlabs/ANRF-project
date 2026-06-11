@@ -18,18 +18,20 @@ export default function Navbar({
 
   useEffect(() => {
     const email = localStorage.getItem("userEmail");
-    if (email) setFacultyEmail(email);
+    if (email) {
+      setFacultyEmail(email);
+    }
   }, []);
 
   const logoutUser = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("userEmail");
-    localStorage.removeItem("userRole");
-    localStorage.removeItem("department");
-    localStorage.removeItem("year");
-    localStorage.removeItem("registerNumber");
-    router.push("/login");
-  };
+  localStorage.removeItem("token");
+  localStorage.removeItem("userEmail");
+  localStorage.removeItem("userRole");
+  localStorage.removeItem("department");
+  localStorage.removeItem("year");
+  localStorage.removeItem("registerNumber");
+  router.push("/login");
+};
 
   const isCreatePage = activeSection === "Create Assessment";
 
@@ -38,20 +40,28 @@ export default function Navbar({
 
       {/* LEFT */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">acadAIsist</h1>
+        <h1 className="text-2xl font-bold text-slate-900">
+          AcadAIsist
+        </h1>
         <p className="text-slate-500 text-sm mt-1">
-          A Small Language Model Based Lightweight and Accessible Evaluation Tool for Reducing Faculty Workload Without Compromising Academic Rigour
+          Academic Evaluation Platform
         </p>
       </div>
 
       {/* RIGHT */}
       <div className="flex items-center gap-4">
 
+        {/* EMAIL */}
         <div className="hidden md:flex flex-col items-end mr-3">
-          <p className="text-sm font-semibold text-slate-800">Faculty Logged In</p>
-          <p className="text-xs text-slate-500">{facultyEmail}</p>
+          <p className="text-sm font-semibold text-slate-800">
+            Faculty Logged In
+          </p>
+          <p className="text-xs text-slate-500">
+            {facultyEmail}
+          </p>
         </div>
 
+        {/* NEW */}
         <button
           onClick={createNewAssessment}
           className="bg-slate-200 hover:bg-slate-300 transition text-slate-800 px-5 py-2 rounded-xl font-semibold text-sm"
@@ -59,6 +69,7 @@ export default function Navbar({
           New
         </button>
 
+        {/* PREVIEW — only on Create Assessment page */}
         {isCreatePage && (
           <button
             onClick={() => setShowPreview(!showPreview)}
@@ -68,6 +79,7 @@ export default function Navbar({
           </button>
         )}
 
+        {/* SAVE — only on Create Assessment page */}
         {isCreatePage && (
           <button
             onClick={saveAssessment}
@@ -78,6 +90,7 @@ export default function Navbar({
           </button>
         )}
 
+        {/* PUBLISH — only on Create Assessment page */}
         {isCreatePage && (
           <button
             onClick={publishAssessment}
@@ -88,6 +101,7 @@ export default function Navbar({
           </button>
         )}
 
+        {/* LOGOUT */}
         <button
           onClick={logoutUser}
           className="bg-red-50 hover:bg-red-100 border border-red-200 transition text-red-600 px-4 py-2 rounded-xl font-medium text-sm"

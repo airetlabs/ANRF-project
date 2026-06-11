@@ -79,7 +79,7 @@ export default function StudentDashboard() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 via-slate-50 to-slate-200">
         <div className="text-center">
           <div className="w-14 h-14 border-4 border-slate-300 border-t-slate-900 rounded-full animate-spin mx-auto mb-6"></div>
-          <h2 className="text-2xl font-bold text-slate-900">Loading AssessPro</h2>
+          <h2 className="text-2xl font-bold text-slate-900">Loading AcadAIsist</h2>
           <p className="text-slate-500 mt-2">Fetching your assessments...</p>
         </div>
       </div>
@@ -92,7 +92,7 @@ export default function StudentDashboard() {
       {/* NAVBAR */}
       <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 py-5 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">AssessPro</h1>
+          <h1 className="text-2xl font-bold text-slate-900">AcadAIsist</h1>
           <p className="text-slate-500 text-sm mt-1">Student Portal</p>
         </div>
         <div className="flex items-center gap-4">

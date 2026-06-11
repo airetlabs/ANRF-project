@@ -144,7 +144,7 @@ export default function AdminDashboard() {
       {/* NAVBAR */}
       <div className="bg-white border-b border-slate-200 px-8 py-5 flex items-center justify-between sticky top-0 z-50 shadow-sm">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">AssessPro</h1>
+          <h1 className="text-2xl font-bold text-slate-900">AcadAIsist</h1>
           <p className="text-slate-500 text-sm">Admin Control Panel</p>
         </div>
         <div className="flex items-center gap-4">

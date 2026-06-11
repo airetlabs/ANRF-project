@@ -74,11 +74,9 @@ export default function LoginPage() {
       <div className="w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-slate-200 p-8">
 
         <div className="text-center mb-6">
-          <h1 className="text-4xl font-bold text-slate-900 mb-1">acadAIsist</h1>
-          <p className="text-xs text-slate-400 mb-4">A Small Language Model Based Lightweight and Accessible Evaluation Tool for Reducing Faculty Workload Without Compromising Academic Rigour</p>
-          <div className="text-5xl mb-3">🔐</div>
-          <h2 className="text-2xl font-bold text-slate-900">Welcome Back</h2>
-          <p className="text-slate-500 mt-1">Sign in to continue</p>
+          <div className="text-6xl mb-3">🔐</div>
+          <h1 className="text-4xl font-bold text-slate-900">Welcome Back</h1>
+          <p className="text-slate-500 mt-2">Sign in to continue to AcadAIsist</p>
         </div>
 
         <form onSubmit={loginUser} className="space-y-4">
@@ -132,7 +130,7 @@ export default function LoginPage() {
               onClick={() => router.push("/student/register")}
               className="text-blue-600 font-semibold cursor-pointer hover:underline"
             >
-              Create Account here
+              Create Account
             </span>
           </p>
 
