@@ -130,7 +130,7 @@ export default function AdminDashboard() {
 
   const logout = () => {
     localStorage.clear();
-    router.push("/login");
+    router.push("/");
   };
 
   const tabs = [
