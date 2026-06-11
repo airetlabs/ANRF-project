@@ -1,4 +1,5 @@
 "use client";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -227,7 +228,7 @@ export default function Home() {
   const fetchAssessments = async () => {
     try {
       const facultyEmail = localStorage.getItem("userEmail");
-      const response = await fetch(`https://anrf-project-production-a47a.up.railway.app/assessment/all/${facultyEmail}`);
+      const response = await fetch(`${API_URL}/assessment/all/${facultyEmail}`);
       const data = await response.json();
       const sorted = [...data].sort((a, b) => {
         if (a._id < b._id) return 1;
@@ -244,7 +245,7 @@ export default function Home() {
   const fetchSubmissions = async (assessmentId) => {
     try {
       setLoadingSubmissions(true);
-      const response = await fetch(`https://anrf-project-production-a47a.up.railway.app/submission/assessment/${assessmentId}`);
+      const response = await fetch(`${API_URL}/submission/assessment/${assessmentId}`);
       const data = await response.json();
       setAssessmentSubmissions(data);
     } catch (error) {
@@ -262,7 +263,7 @@ export default function Home() {
 
     try {
       const response = await fetch(
-        `https://anrf-project-production-a47a.up.railway.app/submission/evaluate/${submissionId}`,
+        `${API_URL}/submission/evaluate/${submissionId}`,
         { method: "POST" }
       );
       const data = await response.json();
@@ -287,7 +288,7 @@ export default function Home() {
 
   const viewSubmission = async (submissionId) => {
     try {
-      const response = await fetch(`https://anrf-project-production-a47a.up.railway.app/submission/view/${submissionId}`);
+      const response = await fetch(`${API_URL}/submission/view/${submissionId}`);
       const data = await response.json();
       setSubmissionDetails(data);
       setShowSubmissionDetails(true);
@@ -416,7 +417,7 @@ export default function Home() {
     if (!validateFields()) return;
     try {
       setSaving(true);
-      const response = await fetch("https://anrf-project-production-a47a.up.railway.app/assessment/create", {
+      const response = await fetch(`${API_URL}/assessment/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildPayload("Draft"))
@@ -441,7 +442,7 @@ export default function Home() {
     if (!validateFields()) return;
     try {
       setSaving(true);
-      const response = await fetch("https://anrf-project-production-a47a.up.railway.app/assessment/create", {
+      const response = await fetch(`${API_URL}/assessment/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildPayload("Published"))

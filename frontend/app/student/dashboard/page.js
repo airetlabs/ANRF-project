@@ -1,4 +1,5 @@
 "use client";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -41,7 +42,7 @@ export default function StudentDashboard() {
       const email = localStorage.getItem("userEmail");
 
       const assessmentResponse = await fetch(
-        `https://anrf-project-production-a47a.up.railway.app/assessment/student/${department}/${year}`
+        `${API_URL}/assessment/student/${department}/${year}`
       );
       const assessmentData = await assessmentResponse.json();
 
@@ -54,7 +55,7 @@ export default function StudentDashboard() {
       setAssessments(sorted);
 
       const submissionResponse = await fetch(
-        `https://anrf-project-production-a47a.up.railway.app/submission/student/${email}`
+        `${API_URL}/submission/student/${email}`
       );
       const submissionData = await submissionResponse.json();
       const submittedAssessmentIds = submissionData.map(

@@ -1,7 +1,7 @@
 from database import db
 from bson import ObjectId
-db.users.insert_one({
-    "email":"fac20@gmail.com",
-    "password":"123456",
-    "role":"faculty",
-})
+from pprint import pprint
+for doc in db.Question.find():
+    pprint(doc)
+# for doc in db.list_collection_names():
+#     db[doc].delete_many({})

@@ -30,9 +30,12 @@ def create_assessment(data: dict):
     assessment_id_str = str(assessment_id)
 
     for idx, q in enumerate(data["questions"]):
-        qid = q.get("question_id")
-        if qid == "" or qid is None:
-            qid = idx + 1
+        qid = idx + 1
+        qid=str(assessment_id)+'_'+str(qid)
+        # qid = q.get("question_id")
+        # if qid == "" or qid is None:
+        #     qid = idx + 1
+        #     qid=str(assessment_id)+'_'+str(qid)
 
         db.Question.insert_one({
             "assessment_id": assessment_id_str,
@@ -40,6 +43,8 @@ def create_assessment(data: dict):
             "question_text": q["question"],
             "max_marks": int(q["marks"]),
             "ans_length": q["expected_length"],
+            "generated_rubrics":False,
+            "generated_tech_words":False
         })
         db.AnswerKey.insert_one({
             "question_id": qid,
