@@ -28,23 +28,14 @@ export default function Navbar({
     localStorage.removeItem("department");
     localStorage.removeItem("year");
     localStorage.removeItem("registerNumber");
-    router.push("/login");
+    router.push("/");
   };
 
   const isCreatePage = activeSection === "Create Assessment";
 
   return (
-    <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 py-5 flex items-center justify-between">
+    <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 py-5 flex items-center justify-end">
 
-      {/* LEFT */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">AcadAIsist</h1>
-        <p className="text-slate-500 text-sm mt-1">
-          A Small Language Model Based Lightweight and Accessible Evaluation Tool for Reducing Faculty Workload Without Compromising Academic Rigour
-        </p>
-      </div>
-
-      {/* RIGHT */}
       <div className="flex items-center gap-4">
 
         <div className="hidden md:flex flex-col items-end mr-3">

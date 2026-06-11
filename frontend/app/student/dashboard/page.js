@@ -71,7 +71,7 @@ export default function StudentDashboard() {
 
   const logout = () => {
     localStorage.clear();
-    router.push("/login");
+    router.push("/");
   };
 
   if (loading) {
