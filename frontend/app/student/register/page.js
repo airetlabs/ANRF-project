@@ -1,5 +1,5 @@
 "use client";
-
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -51,7 +51,7 @@ export default function RegisterPage() {
         year,
       };
 
-      const response = await fetch("https://anrf-project-production.up.railway.app/auth/register", {
+      const response = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

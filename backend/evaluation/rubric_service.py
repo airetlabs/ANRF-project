@@ -11,10 +11,20 @@ out = StrOutputParser()
 def generate_atomic_rubric(faculty_rubric):
 
     system_instruction = """
-Given a faculty written rubrics.
+Given a faculty-written rubric.
+
 Analyse the faculy rubrics properly and write a short line in content for corresponding marks
-Generate an atomic points rubric in Json file,each seperated with a comma.Enclose all rubric point in another{{}}.
-Output must be in the given Json format only,Avoid extra explanation.
+
+Return ONLY a valid JSON array.
+
+Rules:
+1. Output must start with '[' and end with ']'.
+2. Do not include explanations, notes, or extra text.
+3. Each rubric point must be a JSON object.
+4. rubrics_id must be a integer.
+5. marks must be an integer/float.
+6. content must be a string.
+
 [
 {{
 "rubrics_id"
@@ -35,6 +45,9 @@ Output must be in the given Json format only,Avoid extra explanation.
     ])
     chain = prompt_rubric | model | out
     response = chain.invoke({})
+    print("--------------------------------------------------------------------------")
+    print(response)
+    print("--------------------------------------------------------------------------")
     response = json.loads(response)
     verified_rubric = [SingleRubric(**rubric) for rubric in response]
     dict_data = [obj.model_dump() for obj in verified_rubric]
@@ -56,10 +69,15 @@ def accessing_faculty_input(question_id, assessment_id):
     })
     if not answer_key_doc or not answer_key_doc.get("key_text"):
         return
-
+    
+    question_doc=db.Question.find_one({"question_id":question_id,"assessment_id":assessment_id})
+    if question_doc and question_doc.get("generated_rubrics"):
+        return 
     atomic_rubric_json = generate_atomic_rubric(rubric_doc["rubric_text"])
 
     db.Rubric.update_one(
         {"question_id": question_id, "assessment_id": assessment_id},
         {"$set": {"verified_points_json": atomic_rubric_json}},
     )
+    db.Question.update_one({"question_id":question_id,"assessment_id":assessment_id},
+                            {"$set":{"generated_rubrics":True}})

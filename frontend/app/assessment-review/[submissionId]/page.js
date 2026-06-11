@@ -1,4 +1,5 @@
 "use client";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -21,7 +22,7 @@ export default function AssessmentReviewPage() {
     const fetchReview = async () => {
         try {
             const response = await fetch(
-                `https://anrf-project-production.up.railway.app/submission/review/${submissionId}`
+                `${API_URL}/submission/review/${submissionId}`
             );
             const data = await response.json();
             setQuestions(data);
@@ -39,7 +40,7 @@ export default function AssessmentReviewPage() {
                     facultyMarks[q.question_id] ?? q.ai_marks;
 
                 await fetch(
-                    "https://anrf-project-production.up.railway.app/submission/save-correction",
+                    `${API_URL}/submission/save-correction`,
                     {
                         method: "POST",
                         headers: {

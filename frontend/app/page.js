@@ -1,928 +1,175 @@
 "use client";
-
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
-import Sidebar from "./components/Sidebar";
-import Navbar from "./components/Navbar";
-import QuestionCard from "./components/QuestionCard";
-import AssessmentCard from "./components/AssessmentCard";
-import PreviewPanel from "./components/PreviewPanel";
-import AnalyticsChart from "./components/AnalyticsChart";
-import RecentActivity from "./components/RecentActivity";
-import Select from "react-select";
 
-export default function Home() {
-
+export default function LandingPage() {
   const router = useRouter();
 
-  const [checkingAuth, setCheckingAuth] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activeSection, setActiveSection] = useState("Dashboard");
-  const [title, setTitle] = useState("");
-  const [subjectCode, setSubjectCode] = useState("");
-  const [subjectName, setSubjectName] = useState("");
-  const [examDate, setExamDate] = useState("");
-  const [duration, setDuration] = useState("");
-  const [instructions, setInstructions] = useState("");
-  const [selectedDepartments, setSelectedDepartments] = useState([]);
-  const [selectedYears, setSelectedYears] = useState([]);
-  const [availableFrom, setAvailableFrom] = useState("");
-  const [availableTo, setAvailableTo] = useState("");
-  const [showPreview, setShowPreview] = useState(false);
-  const [savedAssessments, setSavedAssessments] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [editingAssessmentId, setEditingAssessmentId] = useState(null);
-  const [saving, setSaving] = useState(false);
-  const [selectedAssessmentId, setSelectedAssessmentId] = useState(null);
-  const [assessmentSubmissions, setAssessmentSubmissions] = useState([]);
-  const [loadingSubmissions, setLoadingSubmissions] = useState(false);
-  const [evaluatingSubmission, setEvaluatingSubmission] = useState(null);
-
-  const [questions, setQuestions] = useState([
-    {
-      question_id: "",
-      question: "",
-      answer_key: "",
-      rubric: "",
-      marks: "",
-      expected_length: ""
-    }
-  ]);
-
-
-  const [submissionDetails, setSubmissionDetails] = useState([]);
-  const [showSubmissionDetails, setShowSubmissionDetails] = useState(false);
-
-
-  // UNSAVED CHANGES WARNING
   useEffect(() => {
-    const handleBeforeUnload = (e) => {
-      if (activeSection === "Create Assessment" && title.trim()) {
-        e.preventDefault();
-        e.returnValue = "";
-      }
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [activeSection, title]);
-
-
-  // HANDLE SECTION CHANGE
-  const handleSectionChange = (newSection) => {
-    if (activeSection === "Create Assessment" && newSection !== "Create Assessment") {
-      const hasData = title.trim() || questions.some((q) => q.question?.trim());
-      if (hasData) {
-        const choice = window.confirm("You have unsaved changes. Leave without saving?");
-        if (!choice) return;
-        resetFields();
-        localStorage.removeItem("assessmentDraft");
-      }
-    }
-    setActiveSection(newSection);
-  };
-
-
-  // AUTH CHECK — must be faculty role
-  // useEffect(() => {
-  //   const token = localStorage.getItem("token");
-  //   const role = localStorage.getItem("userRole");
-  //   if (!token || role !== "faculty") {
-  //     router.push("/login");
-  //   } else {
-  //     setCheckingAuth(false);
-  //   }
-  // }, []);
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const role = localStorage.getItem("userRole");
-    if (!token || role !== "faculty") {
-      router.push("/login");
-    }
+    const els = document.querySelectorAll(".anim");
+    els.forEach((el, i) => {
+      el.style.opacity = "0";
+      el.style.transform = "translateY(20px)";
+      setTimeout(() => {
+        el.style.transition = "opacity 0.55s ease, transform 0.55s ease";
+        el.style.opacity = "1";
+        el.style.transform = "translateY(0)";
+      }, i * 120);
+    });
   }, []);
 
+  const features = [
+    { icon: "⚡", title: "AI Evaluation", desc: "Instant, objective grading via SLM pipeline", accent: "border-t-blue-600", bg: "bg-blue-50", iconColor: "text-blue-600" },
+    { icon: "📋", title: "Rubric Scoring", desc: "Faculty-defined rubrics applied consistently", accent: "border-t-green-600", bg: "bg-green-50", iconColor: "text-green-600" },
+    { icon: "📊", title: "Analytics", desc: "Score trends and class performance insight", accent: "border-t-purple-600", bg: "bg-purple-50", iconColor: "text-purple-600" },
+    { icon: "🔒", title: "Dual Roles", desc: "Separate dashboards for faculty & students", accent: "border-t-amber-500", bg: "bg-amber-50", iconColor: "text-amber-600" },
+  ];
 
-  // LOAD AUTOSAVE
-  useEffect(() => {
-    const savedDraft = localStorage.getItem("assessmentDraft");
-    if (savedDraft) {
-      const parsedDraft = JSON.parse(savedDraft);
-      if (!parsedDraft.title && (!parsedDraft.questions || !parsedDraft.questions[0]?.question)) {
-        return;
-      }
-      setTitle(parsedDraft.title || "");
-      setSubjectCode(parsedDraft.subjectCode || "");
-      setSubjectName(parsedDraft.subjectName || "");
-      setExamDate(parsedDraft.examDate || "");
-      setDuration(parsedDraft.duration || "");
-      setInstructions(parsedDraft.instructions || "");
-      setAvailableFrom(parsedDraft.availableFrom || "");
-      setAvailableTo(parsedDraft.availableTo || "");
-      setQuestions(
-        parsedDraft.questions || [
-          { question_id: "", question: "", answer_key: "", rubric: "", marks: "", expected_length: "" }
-        ]
-      );
-      if (parsedDraft.selectedDepartments) setSelectedDepartments(parsedDraft.selectedDepartments);
-      if (parsedDraft.selectedYears) setSelectedYears(parsedDraft.selectedYears);
-    }
-  }, []);
-
-
-  // AUTOSAVE — only saves when there is actual content
-  useEffect(() => {
-    const hasContent = title.trim() || questions.some((q) => q.question?.trim());
-    if (!hasContent) return;
-
-    localStorage.setItem(
-      "assessmentDraft",
-      JSON.stringify({
-        title, subjectCode, subjectName, examDate, duration, instructions,
-        availableFrom, availableTo, questions, selectedDepartments, selectedYears
-      })
-    );
-  }, [title, subjectCode, subjectName, examDate, duration, instructions, availableFrom, availableTo, questions, selectedDepartments, selectedYears]);
-
-
-  // FETCH ASSESSMENTS
-  useEffect(() => {
-    fetchAssessments();
-  }, []);
-
-
-  // LOAD SUBMISSIONS EVENT
-  useEffect(() => {
-    const handler = (event) => {
-      fetchSubmissions(event.detail);
-    };
-    window.addEventListener("loadSubmissions", handler);
-    return () => window.removeEventListener("loadSubmissions", handler);
-  }, []);
-
-
-  // REFETCH SUBMISSIONS WHEN RETURNING FROM REVIEW PAGE
-  useEffect(() => {
-    if (activeSection === "Submissions" && selectedAssessmentId) {
-      fetchSubmissions(selectedAssessmentId);
-    }
-  }, [activeSection]);
-
-  // OPEN SUBMISSIONS PAGE AFTER RETURNING FROM REVIEW
-  useEffect(() => {
-
-    const openSubmissions =
-      localStorage.getItem("openSubmissions");
-
-    const savedAssessmentId =
-      localStorage.getItem(
-        "selectedAssessmentId"
-      );
-
-    if (
-      openSubmissions === "true" &&
-      savedAssessmentId
-    ) {
-
-      setActiveSection(
-        "Submissions"
-      );
-
-      setSelectedAssessmentId(
-        savedAssessmentId
-      );
-
-      fetchSubmissions(
-        savedAssessmentId
-      );
-
-      localStorage.removeItem(
-        "openSubmissions"
-      );
-
-    }
-
-    const handler = (event) => {
-      fetchSubmissions(event.detail);
-    };
-    window.addEventListener("loadSubmissions", handler);
-    return () => window.removeEventListener("loadSubmissions", handler);
-  }, []);
-
-
-  // OPEN SUBMISSIONS PAGE AFTER RETURNING FROM REVIEW
-  useEffect(() => {
-    const openSubmissions = localStorage.getItem("openSubmissions");
-    const savedAssessmentId = localStorage.getItem("selectedAssessmentId");
-
-    if (openSubmissions === "true" && savedAssessmentId) {
-      setActiveSection("Submissions");
-      setSelectedAssessmentId(savedAssessmentId);
-      fetchSubmissions(savedAssessmentId);
-      localStorage.removeItem("openSubmissions");
-    }
-  }, []);
-
-
-  const fetchAssessments = async () => {
-    try {
-      const facultyEmail = localStorage.getItem("userEmail");
-      const response = await fetch(`https://anrf-project-production.up.railway.app/assessment/all/${facultyEmail}`);
-      const data = await response.json();
-      const sorted = [...data].sort((a, b) => {
-        if (a._id < b._id) return 1;
-        if (a._id > b._id) return -1;
-        return 0;
-      });
-      setSavedAssessments(sorted);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-
-  const fetchSubmissions = async (assessmentId) => {
-    try {
-      setLoadingSubmissions(true);
-      const response = await fetch(`https://anrf-project-production.up.railway.app/submission/assessment/${assessmentId}`);
-      const data = await response.json();
-      setAssessmentSubmissions(data);
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to load submissions");
-    } finally {
-      setLoadingSubmissions(false);
-    }
-  };
-
-
-  const evaluateSubmission = async (submissionId) => {
-
-    setEvaluatingSubmission(submissionId);
-
-    try {
-      const response = await fetch(
-        `https://anrf-project-production.up.railway.app/submission/evaluate/${submissionId}`,
-        { method: "POST" }
-      );
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.detail || "Evaluation failed");
-      }
-      alert("Evaluation Completed");
-      fetchSubmissions(selectedAssessmentId);
-    } catch (error) {
-      console.error(error);
-
-      alert("Evaluation Failed");
-
-    } finally {
-
-      setEvaluatingSubmission(null);
-
-    }
-
-  };
-
-
-  const viewSubmission = async (submissionId) => {
-    try {
-      const response = await fetch(`https://anrf-project-production.up.railway.app/submission/view/${submissionId}`);
-      const data = await response.json();
-      setSubmissionDetails(data);
-      setShowSubmissionDetails(true);
-    } catch (error) {
-      console.error(error);
-      alert("Failed to load submission");
-      alert("Evaluation Failed");
-    } finally {
-      setEvaluatingSubmission(null);
-    }
-  };
-
-
-  // RESET ALL FIELDS
-  const resetFields = () => {
-    setTitle("");
-    setSubjectCode("");
-    setSubjectName("");
-    setExamDate("");
-    setDuration("");
-    setInstructions("");
-    setSelectedDepartments([]);
-    setSelectedYears([]);
-    setAvailableFrom("");
-    setAvailableTo("");
-    setQuestions([{
-      question_id: "",
-      question: "",
-      answer_key: "",
-      rubric: "",
-      marks: "",
-      expected_length: ""
-    }]);
-    setEditingAssessmentId(null);
-  };
-
-
-  // CREATE NEW ASSESSMENT
-  const createNewAssessment = () => {
-    const hasData = title.trim() || questions.some((q) => q.question?.trim());
-    if (hasData) {
-      const choice = window.confirm("You have unsaved changes. Leave without saving?");
-      if (!choice) return;
-    }
-    resetFields();
-    localStorage.removeItem("assessmentDraft");
-    setActiveSection("Create Assessment");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-
-  // ADD QUESTION — inserts after current index
-  const addQuestionCard = (index) => {
-    const newQuestion = {
-      question_id: "",
-      question: "",
-      answer_key: "",
-      rubric: "",
-      marks: "",
-      expected_length: ""
-    };
-    const updatedQuestions = [...questions];
-    updatedQuestions.splice(index + 1, 0, newQuestion);
-    setQuestions(updatedQuestions);
-  };
-
-
-  // UPDATE QUESTION
-  const updateQuestion = (index, field, value) => {
-    const updatedQuestions = [...questions];
-    updatedQuestions[index][field] = value;
-    setQuestions(updatedQuestions);
-  };
-
-
-  // DELETE QUESTION
-  const deleteQuestion = (index) => {
-    const updatedQuestions = questions.filter((_, i) => i !== index);
-    setQuestions(updatedQuestions);
-  };
-
-
-  // BUILD PAYLOAD
-  const buildPayload = (status) => ({
-    title, subjectCode, subjectName, examDate, duration, instructions,
-    departments: selectedDepartments.map((dept) => dept.value),
-    years: selectedYears.map((year) => year.value),
-    availableFrom, availableTo,
-    questions: questions.map((q, index) => ({
-      ...q,
-      question_id: q.question_id || index + 1,
-    })),
-    id: editingAssessmentId,
-    status,
-    faculty_email: localStorage.getItem("userEmail")
-  });
-
-
-  // VALIDATE FIELDS
-  const validateFields = () => {
-    if (!title.trim()) {
-      toast.error("Assessment title is required");
-      return false;
-    }
-    if (questions.length === 0) {
-      toast.error("Please add at least one question");
-      return false;
-    }
-    for (let q of questions) {
-      if (!q.question.trim() || !q.answer_key.trim() || !q.rubric.trim() || !q.marks || !q.expected_length.trim()) {
-        toast.error("Please fill all question fields");
-        return false;
-      }
-      const marksVal = parseInt(q.marks);
-      if (isNaN(marksVal) || marksVal < 1 || marksVal > 100) {
-        toast.error("Marks must be between 1 and 100");
-        return false;
-      }
-    }
-    return true;
-  };
-
-
-  // SAVE ASSESSMENT
-  const saveAssessment = async () => {
-    if (!validateFields()) return;
-    try {
-      setSaving(true);
-      const response = await fetch("https://anrf-project-production.up.railway.app/assessment/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(buildPayload("Draft"))
-      });
-      if (!response.ok) throw new Error("Failed to save");
-      toast.success("Assessment saved successfully");
-      resetFields();
-      localStorage.removeItem("assessmentDraft");
-      fetchAssessments();
-      setActiveSection("Drafts");
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to save assessment");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-
-  // PUBLISH ASSESSMENT
-  const publishAssessment = async () => {
-    if (!validateFields()) return;
-    try {
-      setSaving(true);
-      const response = await fetch("https://anrf-project-production.up.railway.app/assessment/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(buildPayload("Published"))
-      });
-      if (!response.ok) throw new Error();
-      toast.success("Assessment published successfully");
-      resetFields();
-      localStorage.removeItem("assessmentDraft");
-      fetchAssessments();
-      setActiveSection("Published");
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to publish assessment");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-
-  // LOADING SCREEN
-  // if (checkingAuth) {
-  //   return (
-  //     <div className="min-h-screen flex items-center justify-center bg-slate-100">
-  //       <div className="text-center">
-  //         <div className="w-14 h-14 border-4 border-slate-300 border-t-slate-900 rounded-full animate-spin mx-auto mb-6"></div>
-  //         <h2 className="text-2xl font-bold text-slate-900">Loading AcadAIsist</h2>
-  //         <p className="text-slate-500 mt-2">Verifying authentication session...</p>
-  //       </div>
-  //     </div>
-  //   );
-  // }
-
+  const stats = [
+    { val: "AI", label: "Grading", color: "text-blue-800" },
+    { val: "SLM", label: "Powered", color: "text-green-800" },
+    { val: "2×", label: "Faster", color: "text-purple-800" },
+    { val: "Fair", label: "Scoring", color: "text-amber-800" },
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-slate-200 text-gray-900 flex">
+    <div
+      className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50 px-6"
+      style={{ overflow: "hidden" }}
+    >
+      <div className="w-full max-w-3xl">
 
-      {/* SIDEBAR */}
-      <Sidebar
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-        activeSection={activeSection}
-        setActiveSection={handleSectionChange}
-      />
-
-      {/* MAIN CONTENT */}
-      <div className={`w-full transition-all duration-300 ${sidebarOpen ? "ml-[240px]" : "ml-[80px]"}`}>
-
-        {/* NAVBAR */}
-        <Navbar
-          saveAssessment={saveAssessment}
-          publishAssessment={publishAssessment}
-          showPreview={showPreview}
-          setShowPreview={setShowPreview}
-          createNewAssessment={createNewAssessment}
-          saving={saving}
-          activeSection={activeSection}
-        />
-
-        {/* PAGE CONTENT */}
-        <div className="px-10 py-10">
-
-          {/* DASHBOARD */}
-          {activeSection === "Dashboard" && (
-            <div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-                <div className="bg-white rounded-[30px] p-7 border border-slate-200 shadow-sm">
-                  <p className="text-slate-500 text-sm mb-2">Total Assessments</p>
-                  <h2 className="text-5xl font-bold text-slate-900">{savedAssessments.length}</h2>
-                </div>
-
-                <div className="bg-white rounded-[30px] p-7 border border-slate-200 shadow-sm">
-                  <p className="text-slate-500 text-sm mb-2">Draft Assessments</p>
-                  <h2 className="text-5xl font-bold text-slate-900">
-                    {savedAssessments.filter((a) => a.status === "Draft").length}
-                  </h2>
-                </div>
-
-                <div className="bg-white rounded-[30px] p-7 border border-slate-200 shadow-sm">
-                  <p className="text-slate-500 text-sm mb-2">Published Assessments</p>
-                  <h2 className="text-5xl font-bold text-slate-900">
-                    {savedAssessments.filter((a) => a.status === "Published").length}
-                  </h2>
-                </div>
-
-              </div>
-
-              <div className="mt-10">
-                <RecentActivity savedAssessments={savedAssessments} />
-              </div>
+        {/* Header row */}
+        <div className="anim flex items-center justify-between mb-7 pb-7 border-b border-slate-200">
+          <div>
+            <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full border border-blue-200 mb-3">
+              AI-Powered Academic Evaluation
+            </span>
+            <h1 className="text-5xl font-bold text-slate-900 tracking-tight leading-none">
+              AcadAIsist
+            </h1>
+            <div
+              className="h-[3px] rounded-full bg-blue-600 mt-2"
+              style={{ animation: "glowLine 2s ease-in-out infinite", width: "40px" }}
+            />
+            <p className="text-slate-500 text-sm leading-relaxed mt-3 max-w-xs">
+              Reducing faculty workload without compromising academic rigour — powered by Small Language Models.
+            </p>
+          </div>
+          <div style={{ animation: "float 3.5s ease-in-out infinite" }} className="flex-shrink-0">
+            <div className="w-20 h-20 rounded-2xl bg-blue-800 flex items-center justify-center text-4xl border-2 border-blue-900 shadow-lg">
+              🎓
             </div>
-          )}
-
-
-          {/* CREATE ASSESSMENT */}
-          {activeSection === "Create Assessment" && (
-            <div className="space-y-10">
-
-              <div className="bg-white rounded-[30px] border border-slate-200 p-10 mb-12 shadow-sm">
-
-                <div className="mb-10">
-                  <h2 className="text-4xl font-bold text-slate-900">
-                    {editingAssessmentId ? "Edit Assessment" : "Create Assessment"}
-                  </h2>
-                  <p className="text-slate-500 mt-3 text-lg">Build professional assessments for students</p>
-                </div>
-
-                {/* TITLE */}
-                <div className="mb-8">
-                  <label className="block text-sm font-semibold text-slate-600 mb-4">Assessment Title</label>
-                  <input
-                    type="text"
-                    placeholder="Enter assessment title"
-                    className="w-full border border-slate-200 bg-slate-50 p-5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                  />
-                </div>
-
-                {/* SUBJECT CODE & NAME */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-600 mb-4">Subject Code</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. CS301"
-                      className="w-full border border-slate-200 bg-slate-50 p-5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition"
-                      value={subjectCode}
-                      onChange={(e) => setSubjectCode(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-600 mb-4">Subject Name</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Database Management Systems"
-                      className="w-full border border-slate-200 bg-slate-50 p-5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition"
-                      value={subjectName}
-                      onChange={(e) => setSubjectName(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                {/* DEPARTMENT & YEAR */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-600 mb-4">Department</label>
-                    <Select
-                      isMulti
-                      options={[
-                        { value: "CSE", label: "CSE" },
-                        { value: "IT", label: "IT" },
-                        { value: "AIDS", label: "AIDS" },
-                        { value: "ECE", label: "ECE" },
-                        { value: "EEE", label: "EEE" },
-                        { value: "MECH", label: "MECH" },
-                        { value: "CIVIL", label: "CIVIL" }
-                      ]}
-                      value={selectedDepartments}
-                      onChange={setSelectedDepartments}
-                      placeholder="Select Departments"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-600 mb-4">Year</label>
-                    <Select
-                      isMulti
-                      options={[
-                        { value: "1", label: "1" },
-                        { value: "2", label: "2" },
-                        { value: "3", label: "3" },
-                        { value: "4", label: "4" }
-                      ]}
-                      value={selectedYears}
-                      onChange={setSelectedYears}
-                      placeholder="Select Years"
-                    />
-                  </div>
-                </div>
-
-                {/* DATE & DURATION */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-600 mb-4">Date of Examination</label>
-                    <input
-                      type="date"
-                      className="w-full border border-slate-200 bg-slate-50 p-5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition text-slate-700"
-                      value={examDate}
-                      onChange={(e) => setExamDate(e.target.value)}
-                      onKeyDown={(e) => e.preventDefault()}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-600 mb-4">Total Time</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. 90 Minutes"
-                      className="w-full border border-slate-200 bg-slate-50 p-5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition"
-                      value={duration}
-                      onChange={(e) => setDuration(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                {/* AVAILABLE FROM & TO */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-600 mb-4">Available From</label>
-                    <input
-                      type="datetime-local"
-                      value={availableFrom}
-                      onChange={(e) => setAvailableFrom(e.target.value)}
-                      onKeyDown={(e) => e.preventDefault()}
-                      className="w-full border border-slate-200 bg-slate-50 p-5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-600 mb-4">Available To</label>
-                    <input
-                      type="datetime-local"
-                      value={availableTo}
-                      onChange={(e) => setAvailableTo(e.target.value)}
-                      onKeyDown={(e) => e.preventDefault()}
-                      className="w-full border border-slate-200 bg-slate-50 p-5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition"
-                    />
-                  </div>
-                </div>
-
-                {/* INSTRUCTIONS */}
-                <div className="mb-10">
-                  <label className="block text-sm font-semibold text-slate-600 mb-4">Exam Instructions</label>
-                  <textarea
-                    rows={5}
-                    placeholder="Enter exam instructions for students"
-                    className="w-full border border-slate-200 bg-slate-50 p-5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition resize-none text-slate-700"
-                    value={instructions}
-                    onChange={(e) => setInstructions(e.target.value)}
-                  />
-                </div>
-
-                {/* QUESTIONS */}
-                <div className="space-y-8">
-                  {questions.map((q, index) => (
-                    <QuestionCard
-                      key={index}
-                      q={q}
-                      index={index}
-                      addQuestionCard={addQuestionCard}
-                      deleteQuestion={deleteQuestion}
-                      updateQuestion={updateQuestion}
-                    />
-                  ))}
-                </div>
-
-              </div>
-
-              {/* PREVIEW PANEL */}
-              {showPreview && (
-                <PreviewPanel
-                  title={title}
-                  subjectCode={subjectCode}
-                  subjectName={subjectName}
-                  examDate={examDate}
-                  duration={duration}
-                  department={selectedDepartments.map(d => d.value).join(", ") || "All Departments"}
-                  year={selectedYears.map(y => y.value).join(", ") || "All Years"}
-                  availableFrom={availableFrom}
-                  availableTo={availableTo}
-                  instructions={instructions}
-                  questions={questions}
-                />
-              )}
-
-            </div>
-          )}
-
-
-          {/* SEARCH BAR */}
-          {(activeSection === "Drafts" || activeSection === "Published") && (
-            <div className="mb-8">
-              <input
-                type="text"
-                placeholder="Search assessments..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full md:w-[400px] border border-slate-200 bg-white p-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition shadow-sm"
-              />
-            </div>
-          )}
-
-
-          {/* DRAFTS */}
-          {activeSection === "Drafts" && (
-            <div>
-              <div className="mb-8">
-                <h2 className="text-4xl font-bold text-slate-900 mb-3">Draft Assessments</h2>
-                <p className="text-slate-500 text-lg">Continue editing previously saved drafts</p>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                {savedAssessments
-                  .filter((assessment) =>
-                    assessment.status === "Draft" &&
-                    assessment.title.toLowerCase().includes(searchTerm.toLowerCase())
-                  )
-                  .map((assessment) => (
-                    <AssessmentCard
-                      key={assessment._id}
-                      assessment={assessment}
-                      fetchAssessments={fetchAssessments}
-                      setTitle={setTitle}
-                      setQuestions={setQuestions}
-                      setEditingAssessmentId={setEditingAssessmentId}
-                      setActiveSection={setActiveSection}
-                      setSubjectCode={setSubjectCode}
-                      setSubjectName={setSubjectName}
-                      setExamDate={setExamDate}
-                      setDuration={setDuration}
-                      setInstructions={setInstructions}
-                      setSelectedDepartments={setSelectedDepartments}
-                      setSelectedYears={setSelectedYears}
-                      setAvailableFrom={setAvailableFrom}
-                      setAvailableTo={setAvailableTo}
-                    />
-                  ))}
-              </div>
-            </div>
-          )}
-
-
-          {/* PUBLISHED */}
-          {activeSection === "Published" && (
-            <div>
-              <div className="mb-8">
-                <h2 className="text-4xl font-bold text-slate-900 mb-3">Published Assessments</h2>
-                <p className="text-slate-500 text-lg">Live assessments available for students</p>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                {savedAssessments
-                  .filter((assessment) =>
-                    assessment.status === "Published" &&
-                    assessment.title.toLowerCase().includes(searchTerm.toLowerCase())
-                  )
-                  .map((assessment) => (
-                    <AssessmentCard
-                      key={assessment._id}
-                      assessment={assessment}
-                      fetchAssessments={fetchAssessments}
-                      fetchSubmissions={fetchSubmissions}
-                      setTitle={setTitle}
-                      setQuestions={setQuestions}
-                      setEditingAssessmentId={setEditingAssessmentId}
-                      setSelectedAssessmentId={setSelectedAssessmentId}
-                      setActiveSection={setActiveSection}
-                      setSubjectCode={setSubjectCode}
-                      setSubjectName={setSubjectName}
-                      setExamDate={setExamDate}
-                      setDuration={setDuration}
-                      setInstructions={setInstructions}
-                      setSelectedDepartments={setSelectedDepartments}
-                      setSelectedYears={setSelectedYears}
-                      setAvailableFrom={setAvailableFrom}
-                      setAvailableTo={setAvailableTo}
-                    />
-                  ))}
-              </div>
-            </div>
-          )}
-
-
-          {/* ANALYTICS */}
-          {activeSection === "Analytics" && (
-            <div className="space-y-8">
-              <AnalyticsChart savedAssessments={savedAssessments} />
-            </div>
-          )}
-
-
-          {/* SUBMISSIONS */}
-          {activeSection === "Submissions" && (
-            <div>
-              <div className="mb-8">
-                <h2 className="text-4xl font-bold text-slate-900 mb-3">Student Submissions</h2>
-                <p className="text-slate-500 text-lg">Assessment ID: {selectedAssessmentId}</p>
-              </div>
-
-              {loadingSubmissions ? (
-                <div className="bg-white rounded-3xl p-8">Loading submissions...</div>
-              ) : (
-                <>
-                  <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
-                    <table className="w-full">
-                      <thead className="bg-slate-100">
-                        <tr>
-                          <th className="p-4 text-left">Student ID</th>
-                          <th className="p-4 text-left">Email</th>
-                          <th className="p-4 text-left">Status</th>
-                          <th className="p-4 text-left">Final Marks</th>
-                          <th className="p-4 text-left">View</th>
-                          <th className="p-4 text-left">Evaluate</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {assessmentSubmissions.map((submission) => (
-                          <tr key={submission.submission_id} className="border-t">
-
-                            <td className="p-4">{submission.student_id}</td>
-
-                            <td className="p-4">{submission.student_email}</td>
-
-                            <td className="p-4">{submission.status}</td>
-
-                            <td className="p-4 font-semibold text-[#071330]">
-                              {submission.final_marks > 0 ? Math.round(submission.final_marks) : "-"}
-                            </td>
-
-                            <td className="p-4">
-                              <button
-                                onClick={() => {
-
-                                  localStorage.setItem(
-                                    "selectedAssessmentId",
-                                    selectedAssessmentId
-                                  );
-
-                                  router.push(
-                                    `/assessment-review/${submission.submission_id}`
-                                  );
-
-                                }}
-                                className="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg"
-                              >
-                                View
-                              </button>
-                            </td>
-
-                            <td className="p-4">
-                              <button
-                                disabled={
-                                  (submission.status === "Evaluated" || submission.status === "Finalized") ||
-                                  evaluatingSubmission === submission.submission_id
-                                }
-                                onClick={() => evaluateSubmission(submission.submission_id)}
-                                className={`px-4 py-2 rounded-lg text-white ${(submission.status === "Evaluated" || submission.status === "Finalized")
-                                  ? "bg-green-600 cursor-not-allowed"
-                                  : evaluatingSubmission === submission.submission_id
-                                  ? "bg-blue-400 cursor-not-allowed"
-                                  : "bg-blue-600 hover:bg-blue-700"
-                                  }`}
-                              >
-                                {evaluatingSubmission === submission.submission_id
-                                  ? "Evaluating..."
-                                  : (submission.status === "Evaluated" || submission.status === "Finalized")
-                                    ? "Evaluated"
-                                    : "Evaluate"}
-                              </button>
-                            </td>
-
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {showSubmissionDetails && (
-                    <div className="mt-8 bg-white p-6 rounded-3xl shadow">
-                      <h2 className="text-2xl font-bold mb-6">Submission Details</h2>
-                      {submissionDetails.map((item, index) => (
-                        <div key={index} className="mb-6 border-b pb-4">
-                          <h3 className="font-bold mb-2">Question {item.question_id}</h3>
-                          <p className="text-slate-700 whitespace-pre-wrap">{item.answer}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-
+          </div>
         </div>
+
+        {/* Stats row */}
+        <div className="anim grid grid-cols-4 gap-2.5 mb-5">
+          {stats.map((s) => (
+            <div key={s.label} className="bg-white border border-slate-200 rounded-xl p-3 text-center shadow-sm">
+              <div className={`text-lg font-bold ${s.color}`}>{s.val}</div>
+              <div className="text-xs text-slate-500 mt-1">{s.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Feature cards */}
+        <div className="anim grid grid-cols-4 gap-2.5 mb-5">
+          {features.map((f) => (
+            <div
+              key={f.title}
+              className={`bg-white rounded-2xl p-4 border border-slate-200 shadow-sm hover:-translate-y-1 transition-transform duration-200 relative overflow-hidden border-t-2 ${f.accent}`}
+            >
+              <div className={`w-8 h-8 ${f.bg} border border-slate-100 rounded-lg flex items-center justify-center text-base mb-2.5`}>
+                <span className={`text-sm ${f.iconColor}`}>{f.icon}</span>
+              </div>
+              <p className="font-semibold text-slate-800 text-xs mb-1">{f.title}</p>
+              <p className="text-slate-400 text-xs leading-relaxed">{f.desc}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Role cards */}
+        <div className="anim flex gap-2.5 mb-6">
+          <div className="flex-1 flex items-center gap-3 bg-white border border-slate-200 rounded-2xl px-4 py-3 hover:-translate-y-0.5 transition-transform duration-200 shadow-sm">
+            <div className="w-9 h-9 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-800">Faculty</p>
+              <p className="text-xs text-slate-400">Create, publish, evaluate and review</p>
+            </div>
+          </div>
+          <div className="flex-1 flex items-center gap-3 bg-white border border-slate-200 rounded-2xl px-4 py-3 hover:-translate-y-0.5 transition-transform duration-200 shadow-sm">
+            <div className="w-9 h-9 bg-green-50 border border-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-800">Students</p>
+              <p className="text-xs text-slate-400">Submit answers and view AI marks</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom row */}
+        <div className="anim flex items-center justify-between flex-wrap gap-3 pt-5 border-t border-slate-200">
+          <div className="flex gap-2 flex-wrap">
+            {[
+              {
+                label: "Instant Grading", icon: (
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                )
+              },
+              {
+                label: "Academic Integrity", icon: (
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                )
+              },
+              {
+                label: "Transparent Scoring", icon: (
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                )
+              },
+            ].map((t) => (
+              <span key={t.label} className="inline-flex items-center gap-1.5 bg-white border border-slate-200 text-slate-500 text-xs px-3 py-1.5 rounded-full shadow-sm">
+                <span className="text-slate-400">{t.icon}</span>
+                {t.label}
+              </span>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => router.push("/login")}
+              className="bg-white hover:bg-slate-50 active:scale-95 text-slate-700 font-medium px-6 py-3 rounded-xl border border-slate-300 transition-all duration-150 text-sm"
+            >
+              Sign In
+            </button>
+            <button
+              onClick={() => router.push("/student/register")}
+              className="bg-blue-800 hover:bg-blue-900 active:scale-95 text-white font-semibold px-7 py-3 rounded-xl transition-all duration-150 text-sm shadow-md"
+            >
+              Get Started →
+            </button>
+          </div>
+        </div>
+
       </div>
+
+      <style jsx global>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-8px); }
+        }
+        @keyframes glowLine {
+          0%, 100% { width: 40px; }
+          50% { width: 72px; }
+        }
+      `}</style>
     </div>
   );
 }

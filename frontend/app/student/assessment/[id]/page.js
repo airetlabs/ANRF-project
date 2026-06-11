@@ -1,4 +1,5 @@
 "use client";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -36,8 +37,8 @@ export default function StudentAssessmentPage() {
   const fetchAssessment = async () => {
     try {
       const [assessmentRes, questionsRes] = await Promise.all([
-        fetch(`https://anrf-project-production.up.railway.app/assessment/view/${params.id}`),
-        fetch(`https://anrf-project-production.up.railway.app/assessment/questions/${params.id}`),
+        fetch(`${API_URL}/assessment/view/${params.id}`),
+        fetch(`${API_URL}/assessment/questions/${params.id}`),
       ]);
       const data = await assessmentRes.json();
       const questionData = await questionsRes.json();
@@ -71,7 +72,7 @@ export default function StudentAssessmentPage() {
         return;
       }
 
-      const response = await fetch("https://anrf-project-production.up.railway.app/submission/submit", {
+      const response = await fetch(`${API_URL}/submission/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
