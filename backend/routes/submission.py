@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException
 from bson import ObjectId
 from datetime import datetime
 from database import db
-from evaluation.pipeline import evaluate_pipeline
+from evaluation.rag_pipeline import evaluate_rag_pipeline
 
 logger = logging.getLogger(__name__)
 
@@ -359,7 +359,7 @@ def evaluate_submission(submission_id: str):
 
     question_ids = [q["question_id"] for q in questions]
 
-    scores = evaluate_pipeline(
+    scores = evaluate_rag_pipeline(
         submission["student_id"],
         question_ids,
         assessment_id

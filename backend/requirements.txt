@@ -11,3 +11,9 @@ python-multipart
 langchain-core
 langchain-groq
 pandas
+chromadb==0.6.3
+openai
+certifi
+python-dotenv
+chromadb==0.6.3
+certifi
