@@ -156,6 +156,18 @@ export default function StudentDashboard() {
 
               const isSubmitted = submittedIds.includes(assessment._id);
 
+              const now = new Date();
+              const start = new Date(assessment.availableFrom);
+              const end = new Date(assessment.availableTo);
+
+              let assessmentStatus = "Live";
+
+              if (now < start) {
+                assessmentStatus = "Upcoming";
+              } else if (now > end) {
+                assessmentStatus = "Expired";
+              }
+
               return (
                 <div
                   key={assessment._id}
@@ -172,8 +184,15 @@ export default function StudentDashboard() {
                         Submitted
                       </span>
                     ) : (
-                      <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap">
-                        Available
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap text-white ${assessmentStatus === "Live"
+                          ? "bg-green-600"
+                          : assessmentStatus === "Upcoming"
+                            ? "bg-yellow-500"
+                            : "bg-red-600"
+                          }`}
+                      >
+                        {assessmentStatus}
                       </span>
                     )}
                   </div>
@@ -199,9 +218,15 @@ export default function StudentDashboard() {
                   ) : (
                     <button
                       onClick={() => router.push(`/student/assessment/${assessment._id}`)}
-                      className="w-full bg-slate-900 hover:bg-slate-700 text-white py-3 rounded-2xl font-semibold transition"
+                      disabled={assessmentStatus === "Expired"}
+                      className={`w-full py-3 rounded-2xl font-semibold transition ${assessmentStatus === "Expired"
+                          ? "bg-gray-400 text-white cursor-not-allowed"
+                          : "bg-slate-900 hover:bg-slate-700 text-white"
+                        }`}
                     >
-                      Open Assessment
+                      {assessmentStatus === "Expired"
+                        ? "Assessment Expired"
+                        : "Open Assessment"}
                     </button>
                   )}
 

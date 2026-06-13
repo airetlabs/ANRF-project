@@ -15,11 +15,64 @@ export default function StudentAssessmentPage() {
   const [submitting, setSubmitting] = useState(false);
   const [answers, setAnswers] = useState({});
 
+  const [assessmentStatus, setAssessmentStatus] = useState("");
+  const [timeLeft, setTimeLeft] = useState(null);
+
+  const formatTime = (ms) => {
+    const totalSeconds = Math.floor(ms / 1000);
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+
+    return `${String(hrs).padStart(2, "0")}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  };
+
   useEffect(() => {
     if (params.id) {
       fetchAssessment();
     }
   }, [params.id]);
+
+  useEffect(() => {
+    if (!assessment?.duration) return;
+
+    const savedStartTime = localStorage.getItem(
+      `assessment_start_${assessment._id}`
+    );
+
+    let startTime;
+
+    if (savedStartTime) {
+      startTime = Number(savedStartTime);
+    } else {
+      startTime = Date.now();
+      localStorage.setItem(
+        `assessment_start_${assessment._id}`,
+        startTime
+      );
+    }
+
+    const durationMs = assessment.duration * 60 * 1000;
+
+    const timer = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const remaining = durationMs - elapsed;
+
+      if (remaining <= 0) {
+        clearInterval(timer);
+        setTimeLeft(0);
+
+        if (!submitting) {
+          alert("Time is up. Assessment will be submitted.");
+          submitAssessment();
+        }
+      } else {
+        setTimeLeft(remaining);
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [assessment, submitting]);
 
   // UNSAVED CHANGES WARNING — browser tab close / refresh
   useEffect(() => {
@@ -43,6 +96,17 @@ export default function StudentAssessmentPage() {
       const data = await assessmentRes.json();
       const questionData = await questionsRes.json();
       setAssessment(data);
+      const now = new Date();
+      const start = new Date(data.availableFrom);
+      const end = new Date(data.availableTo);
+
+      if (now < start) {
+        setAssessmentStatus("Upcoming");
+      } else if (now > end) {
+        setAssessmentStatus("Expired");
+      } else {
+        setAssessmentStatus("Live");
+      }
       setQuestions(Array.isArray(questionData) ? questionData : []);
     } catch (error) {
       console.error(error);
@@ -59,10 +123,17 @@ export default function StudentAssessmentPage() {
   };
 
   const getWordCount = (text) => {
-    return (text || "").split(/\s+/).filter(Boolean).length;
+    return (text || "").trim().split(/\s+/).filter(Boolean).length;
+  };
+
+  const getCharacterCount = (text) => {
+    return (text || "").length;
   };
 
   const submitAssessment = async () => {
+
+    if (submitting) return;
+
     try {
       setSubmitting(true);
 
@@ -91,7 +162,13 @@ export default function StudentAssessmentPage() {
       }
 
       // Clear answers so unsaved warning doesn't trigger after submit
+
       setAnswers({});
+
+      localStorage.removeItem(
+        `assessment_start_${assessment._id}`
+      );
+
       alert(data.message || "Assessment Submitted Successfully");
       router.push("/student/dashboard");
 
@@ -137,7 +214,32 @@ export default function StudentAssessmentPage() {
             <p className="text-slate-500 text-lg">Student Assessment</p>
           </div>
 
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 text-slate-800">
+
+
+          <div className="mt-4 flex flex-wrap gap-4 items-center">
+
+            <span
+              className={`px-4 py-2 rounded-xl font-semibold text-white ${assessmentStatus === "Live"
+                ? "bg-green-600"
+                : assessmentStatus === "Expired"
+                  ? "bg-red-600"
+                  : "bg-yellow-500"
+                }`}
+            >
+              {assessmentStatus}
+            </span>
+
+            {timeLeft !== null && (
+              <div className="bg-red-50 border border-red-200 px-4 py-2 rounded-xl">
+                <span className="font-semibold text-red-700">
+                  Time Remaining: {formatTime(timeLeft)}
+                </span>
+              </div>
+            )}
+
+          </div>
+
+          <div className="mt-6 bg-slate-50 border border-slate-200 rounded-2xl p-6 text-slate-800">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <p><span className="font-semibold">Subject Code:</span> {assessment.subjectCode}</p>
               <p><span className="font-semibold">Subject Name:</span> {assessment.subjectName}</p>
@@ -162,16 +264,17 @@ export default function StudentAssessmentPage() {
           {(questions.length > 0
             ? questions
             : assessment.questions?.map((q, index) => ({
-                question_id: index + 1,
-                question_text: q.question,
-                max_marks: q.marks,
-                ans_length: q.expected_length
-              })) || []
+              question_id: index + 1,
+              question_text: q.question,
+              max_marks: q.marks,
+              ans_length: q.expected_length
+            })) || []
           ).map((question, index) => {
 
             const questionId = question.question_id ?? index + 1;
             const answerText = answers[String(questionId)] || "";
             const wordCount = getWordCount(answerText);
+            const characterCount = getCharacterCount(answerText);
             const expectedLength = Number(question.ans_length) || 0;
             const isOverLimit = expectedLength > 0 && wordCount > expectedLength;
 
@@ -215,11 +318,18 @@ export default function StudentAssessmentPage() {
                       {expectedLength > 0 ? `${expectedLength} words` : "Not specified"}
                     </span>
                   </p>
-                  <p className={`text-sm font-semibold ${
-                    isOverLimit ? "text-red-500" : "text-slate-500"
-                  }`}>
-                    {wordCount} / {expectedLength > 0 ? expectedLength : "—"} words
-                  </p>
+                  <div className="text-right">
+                    <p
+                      className={`text-sm font-semibold ${isOverLimit ? "text-red-500" : "text-slate-500"
+                        }`}
+                    >
+                      {wordCount} / {expectedLength > 0 ? expectedLength : "—"} words
+                    </p>
+
+                    <p className="text-sm text-slate-500">
+                      {characterCount} characters
+                    </p>
+                  </div>
                 </div>
 
               </div>
@@ -238,7 +348,7 @@ export default function StudentAssessmentPage() {
                 submitAssessment();
               }
             }}
-            disabled={submitting}
+            disabled={submitting || assessmentStatus === "Expired"}
             className="bg-slate-900 hover:bg-slate-700 text-white px-10 py-4 rounded-2xl font-semibold transition disabled:opacity-50 text-lg"
           >
             {submitting ? "Submitting..." : "Submit Assessment"}
