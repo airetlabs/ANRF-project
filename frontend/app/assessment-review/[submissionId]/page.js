@@ -57,7 +57,7 @@ export default function AssessmentReviewPage() {
             }
             alert("Evaluation Finalized Successfully");
             localStorage.setItem("openSubmissions", "true");
-            router.push("/");
+            router.push("/faculty/dashboard");
         } catch (error) {
             console.error(error);
             alert("Error Saving Evaluation");
