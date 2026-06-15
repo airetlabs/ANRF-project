@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
-import QuestionCard from "../../components/QuestionCard";
+import QuestionCard from "../components/QuestionCard";
 import AssessmentCard from "../components/AssessmentCard";
 import PreviewPanel from "../components/PreviewPanel";
 import AnalyticsChart from "../components/AnalyticsChart";
