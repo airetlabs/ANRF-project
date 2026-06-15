@@ -532,7 +532,7 @@ export default function Home() {
                             </div>
 
                             <div className="mt-10">
-                                <RecentActivity savedAssessments={savedAssessments} />
+                                <RecentActivity savedAssessments={savedAssessments} setActiveSection={setActiveSection} setTitle={setTitle} setQuestions={setQuestions} setEditingAssessmentId={setEditingAssessmentId} setSubjectCode={setSubjectCode} setSubjectName={setSubjectName} setExamDate={setExamDate} setDuration={setDuration} setInstructions={setInstructions} setSelectedDepartments={setSelectedDepartments} setSelectedYears={setSelectedYears} setAvailableFrom={setAvailableFrom} setAvailableTo={setAvailableTo} />
                             </div>
                         </div>
                     )}
