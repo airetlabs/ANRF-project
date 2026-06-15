@@ -271,12 +271,12 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
             if (!response.ok) {
                 throw new Error(data.detail || "Evaluation failed");
             }
-            alert("Evaluation Completed");
+            toast.success("Evaluation Completed");
             fetchSubmissions(selectedAssessmentId);
         } catch (error) {
             console.error(error);
 
-            alert("Evaluation Failed");
+            toast.error("Evaluation Failed");
 
         } finally {
 
@@ -295,8 +295,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
             setShowSubmissionDetails(true);
         } catch (error) {
             console.error(error);
-            alert("Failed to load submission");
-            alert("Evaluation Failed");
+            toast.error("Failed to load submission");
+            toast.error("Evaluation Failed");
         } finally {
             setEvaluatingSubmission(null);
         }
@@ -928,4 +928,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
         </div>
     );
 }
+
+
+
 
