@@ -1,5 +1,5 @@
 "use client";
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://anrf-project-production-a47a.up.railway.app";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -80,7 +80,7 @@ export default function RegisterPage() {
 
         {/* HEADER */}
         <div className="text-center mb-6">
-          <div className="text-6xl mb-3">🎓</div>
+          <div className="text-6xl mb-3">??</div>
           <h1 className="text-4xl font-bold text-slate-900">Student Register</h1>
           <p className="text-slate-500 mt-2">Create your student account for AcadAIsist</p>
         </div>

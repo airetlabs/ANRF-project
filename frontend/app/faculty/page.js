@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -15,7 +15,7 @@ import Select from "react-select";
 export default function Home() {
 
     const router = useRouter();
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://anrf-project-production-a47a.up.railway.app";
     const [checkingAuth, setCheckingAuth] = useState(true);
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [activeSection, setActiveSection] = useState("Dashboard");
@@ -83,7 +83,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
     };
 
 
-    // AUTH CHECK â€” must be faculty role
+    // AUTH CHECK — must be faculty role
     // useEffect(() => {
     //   const token = localStorage.getItem("token");
     //   const role = localStorage.getItem("userRole");
@@ -132,7 +132,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
     }, []);
 
 
-    // AUTOSAVE â€” only saves when there is actual content
+    // AUTOSAVE — only saves when there is actual content
     useEffect(() => {
         const hasContent = title.trim() || questions.some((q) => q.question?.trim());
         if (!hasContent) return;
@@ -341,7 +341,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
     };
 
 
-    // ADD QUESTION â€” inserts after current index
+    // ADD QUESTION — inserts after current index
     const addQuestionCard = (index) => {
         const newQuestion = {
             question_id: "",

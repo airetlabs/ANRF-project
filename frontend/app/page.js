@@ -20,22 +20,22 @@ export default function LandingPage() {
   }, []);
 
   const features = [
-    { icon: "⚡", title: "AI Evaluation", desc: "Instant, objective grading via SLM pipeline", accent: "border-t-blue-600", bg: "bg-blue-50", iconColor: "text-blue-600" },
-    { icon: "📋", title: "Rubric Scoring", desc: "Faculty-defined rubrics applied consistently", accent: "border-t-green-600", bg: "bg-green-50", iconColor: "text-green-600" },
-    { icon: "📊", title: "Analytics", desc: "Score trends and class performance insight", accent: "border-t-purple-600", bg: "bg-purple-50", iconColor: "text-purple-600" },
-    { icon: "🔒", title: "Dual Roles", desc: "Separate dashboards for faculty & students", accent: "border-t-amber-500", bg: "bg-amber-50", iconColor: "text-amber-600" },
+    { icon: "?", title: "AI Evaluation", desc: "Instant, objective grading via SLM pipeline", accent: "border-t-blue-600", bg: "bg-blue-50", iconColor: "text-blue-600" },
+    { icon: "??", title: "Rubric Scoring", desc: "Faculty-defined rubrics applied consistently", accent: "border-t-green-600", bg: "bg-green-50", iconColor: "text-green-600" },
+    { icon: "??", title: "Analytics", desc: "Score trends and class performance insight", accent: "border-t-purple-600", bg: "bg-purple-50", iconColor: "text-purple-600" },
+    { icon: "??", title: "Dual Roles", desc: "Separate dashboards for faculty & students", accent: "border-t-amber-500", bg: "bg-amber-50", iconColor: "text-amber-600" },
   ];
 
   const stats = [
     { val: "AI", label: "Grading", color: "text-blue-800" },
     { val: "SLM", label: "Powered", color: "text-green-800" },
-    { val: "2×", label: "Faster", color: "text-purple-800" },
+    { val: "2�", label: "Faster", color: "text-purple-800" },
     { val: "Fair", label: "Scoring", color: "text-amber-800" },
   ];
 
   const roles = [
     {
-      icon: "🛡️",
+      icon: "???",
       title: "Admin",
       desc: "Manage users, departments and system settings",
       color: "border-red-200 hover:border-red-400 hover:bg-red-50",
@@ -43,7 +43,7 @@ export default function LandingPage() {
       route: "/login",
     },
     {
-      icon: "👨‍🏫",
+      icon: "?????",
       title: "Faculty",
       desc: "Create assessments, evaluate and review submissions",
       color: "border-blue-200 hover:border-blue-400 hover:bg-blue-50",
@@ -51,7 +51,7 @@ export default function LandingPage() {
       route: "/login",
     },
     {
-      icon: "🎓",
+      icon: "??",
       title: "Student",
       desc: "Register, submit answers and view AI marks",
       color: "border-green-200 hover:border-green-400 hover:bg-green-50",
@@ -78,12 +78,12 @@ export default function LandingPage() {
             </h1>
             <div className="h-[3px] rounded-full bg-blue-600 mt-2" style={{ animation: "glowLine 2s ease-in-out infinite", width: "40px" }} />
             <p className="text-slate-500 text-sm leading-relaxed mt-3 max-w-xs">
-              Reducing faculty workload without compromising academic rigour — powered by Small Language Models.
+              Reducing faculty workload without compromising academic rigour � powered by Small Language Models.
             </p>
           </div>
           <div style={{ animation: "float 3.5s ease-in-out infinite" }} className="flex-shrink-0">
             <div className="w-20 h-20 rounded-2xl bg-blue-800 flex items-center justify-center text-4xl border-2 border-blue-900 shadow-lg">
-              🎓
+              ??
             </div>
           </div>
         </div>
@@ -163,7 +163,7 @@ export default function LandingPage() {
               onClick={() => setShowRoleModal(true)}
               className="bg-blue-800 hover:bg-blue-900 active:scale-95 text-white font-semibold px-7 py-3 rounded-xl transition-all duration-150 text-sm shadow-md"
             >
-              Get Started →
+              Get Started ?
             </button>
           </div>
         </div>
@@ -199,7 +199,7 @@ export default function LandingPage() {
                     <p className="font-bold text-slate-900">{role.title}</p>
                     <p className="text-xs text-slate-500 mt-0.5">{role.desc}</p>
                   </div>
-                  <span className="ml-auto text-slate-400 text-lg">→</span>
+                  <span className="ml-auto text-slate-400 text-lg">?</span>
                 </button>
               ))}
             </div>

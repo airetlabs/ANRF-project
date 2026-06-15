@@ -86,7 +86,7 @@ export default function QuestionCard({
             onClick={(e) => { e.stopPropagation(); deleteQuestion(index); }}
             className="w-9 h-9 rounded-xl bg-white border border-slate-200 hover:bg-red-50 hover:border-red-300 transition flex items-center justify-center text-lg"
           >
-            Ã—
+            ×
           </button>
         </div>
       </motion.div>
@@ -154,7 +154,7 @@ export default function QuestionCard({
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-600 mb-2">Marks (1â€“100)</label>
+                  <label className="block text-sm font-semibold text-slate-600 mb-2">Marks (1–100)</label>
                   <input
                     type="number"
                     placeholder="e.g. 10"

@@ -1,5 +1,5 @@
 "use client";
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://anrf-project-production-a47a.up.railway.app";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -144,7 +144,7 @@ export default function StudentDashboard() {
         {assessments.length === 0 ? (
 
           <div className="bg-white rounded-[30px] p-10 border border-slate-200 shadow-sm text-center">
-            <div className="text-5xl mb-4">📋</div>
+            <div className="text-5xl mb-4">??</div>
             <h2 className="text-xl font-semibold text-slate-900 mb-2">No Assessments Available</h2>
             <p className="text-slate-500">Check back later for new assessments from your faculty.</p>
           </div>
@@ -194,7 +194,7 @@ export default function StudentDashboard() {
                       disabled
                       className="w-full bg-green-600 text-white py-3 rounded-2xl font-semibold cursor-not-allowed opacity-80"
                     >
-                      ✓ Submitted
+                      ? Submitted
                     </button>
                   ) : (
                     <button

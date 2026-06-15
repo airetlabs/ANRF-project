@@ -52,7 +52,7 @@ export default function Sidebar({
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="bg-slate-800 hover:bg-slate-700 transition w-9 h-9 rounded-xl flex items-center justify-center text-sm"
             >
-              ☰
+              ?
             </button>
           </div>
 

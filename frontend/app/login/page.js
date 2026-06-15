@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://anrf-project-production-a47a.up.railway.app";
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -77,7 +77,7 @@ export default function LoginPage() {
         <div className="text-center mb-6">
           <h1 className="text-4xl font-bold text-slate-900 mb-1">AcadAIsist</h1>
           <p className="text-xs text-slate-400 mb-4">A Small Language Model Based Lightweight and Accessible Evaluation Tool for Reducing Faculty Workload Without Compromising Academic Rigour</p>
-          <div className="text-5xl mb-3">🔐</div>
+          <div className="text-5xl mb-3">??</div>
           <h2 className="text-2xl font-bold text-slate-900">Welcome Back</h2>
           <p className="text-slate-500 mt-1">Sign in to continue</p>
         </div>

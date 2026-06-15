@@ -1,5 +1,5 @@
 "use client";
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://anrf-project-production-a47a.up.railway.app";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -134,9 +134,9 @@ export default function AdminDashboard() {
   };
 
   const tabs = [
-    { id: "faculty", label: "Faculty Management", emoji: "🧑‍🏫" },
-    { id: "assessments", label: "All Assessments", emoji: "📋" },
-    { id: "submissions", label: "All Submissions", emoji: "📝" },
+    { id: "faculty", label: "Faculty Management", emoji: "?????" },
+    { id: "assessments", label: "All Assessments", emoji: "??" },
+    { id: "submissions", label: "All Submissions", emoji: "??" },
   ];
 
   return (
@@ -347,7 +347,7 @@ export default function AdminDashboard() {
                         </span>
                       </td>
                       <td className="px-8 py-4 text-slate-600 text-sm">
-                        {a.departments?.join(", ") || "—"}
+                        {a.departments?.join(", ") || ""}
                       </td>
                     </tr>
                   ))}
@@ -388,7 +388,7 @@ export default function AdminDashboard() {
                       <td className="px-8 py-4 text-slate-600 text-sm">
                         {s.submitted_at
                           ? new Date(s.submitted_at).toLocaleString("en-GB")
-                          : "—"}
+                          : ""}
                       </td>
                       <td className="px-8 py-4">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
