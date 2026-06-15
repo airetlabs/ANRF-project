@@ -1,11 +1,11 @@
 "use client";
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -142,3 +142,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

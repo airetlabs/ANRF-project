@@ -255,43 +255,51 @@ def review_submission(submission_id: str):
 
     return result
 
-
 # EVALUATE SUBMISSION — runs ML pipeline
 @router.post("/evaluate/{submission_id}")
 def evaluate_submission(submission_id: str):
+    try:
+        submission = db.StudentSubmission.find_one(
+            {"_id": ObjectId(submission_id)}
+        )
 
-    submission = db.StudentSubmission.find_one(
-        {"_id": ObjectId(submission_id)}
-    )
+        if not submission:
+            raise HTTPException(status_code=404, detail="Submission not found")
 
-    if not submission:
-        raise HTTPException(status_code=404, detail="Submission not found")
+        assessment_id = submission["assessment_id"]
 
-    assessment_id = submission["assessment_id"]
+        questions = list(
+            db.Question.find({"assessment_id": assessment_id})
+        )
 
-    questions = list(
-        db.Question.find({"assessment_id": assessment_id})
-    )
+        question_ids = [q["question_id"] for q in questions]
 
-    question_ids = [q["question_id"] for q in questions]
+        logger.info(f"Evaluating submission {submission_id}")
+        logger.info(f"Student ID: {submission['student_id']}")
+        logger.info(f"Assessment ID: {assessment_id}")
+        logger.info(f"Question IDs: {question_ids}")
 
-    scores = evaluate_pipeline(
-        submission["student_id"],
-        question_ids,
-        assessment_id
-    )
+        scores = evaluate_pipeline(
+            submission["student_id"],
+            question_ids,
+            assessment_id
+        )
 
-    db.StudentSubmission.update_one(
-        {"_id": ObjectId(submission_id)},
-        {"$set": {"status": "Evaluated"}}
-    )
+        db.StudentSubmission.update_one(
+            {"_id": ObjectId(submission_id)},
+            {"$set": {"status": "Evaluated"}}
+        )
 
-    return {
-        "message": "Evaluation Completed",
-        "scores": scores
-    }
+        return {
+            "message": "Evaluation Completed",
+            "scores": scores
+        }
 
-
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Evaluation failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 # SAVE FACULTY CORRECTION
 @router.post("/save-correction")
 def save_correction(data: dict):

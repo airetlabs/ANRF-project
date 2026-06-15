@@ -453,7 +453,15 @@ export default function Home() {
                   setTitle={setTitle}
                   setQuestions={setQuestions}
                   setEditingAssessmentId={setEditingAssessmentId}
-                  setSelectedAssessmentId={setSelectedAssessmentId}
+                  setSubjectCode={setSubjectCode}
+                  setSubjectName={setSubjectName}
+                  setExamDate={setExamDate}
+                  setDuration={setDuration}
+                  setInstructions={setInstructions}
+                  setSelectedDepartments={setSelectedDepartments}
+                  setSelectedYears={setSelectedYears}
+                  setAvailableFrom={setAvailableFrom}
+                  setAvailableTo={setAvailableTo}
                 />
               </div>
             </div>
@@ -920,12 +928,13 @@ export default function Home() {
                                   evaluatingSubmission === submission.submission_id
                                 }
                                 onClick={() => evaluateSubmission(submission.submission_id)}
-                                className={`px-4 py-2 rounded-lg text-white ${(submission.status === "Evaluated" || submission.status === "Finalized")
-                                  ? "bg-green-600 cursor-not-allowed"
-                                  : evaluatingSubmission === submission.submission_id
-                                  ? "bg-blue-400 cursor-not-allowed"
-                                  : "bg-blue-600 hover:bg-blue-700"
-                                  }`}
+                                className={`px-4 py-2 rounded-lg text-white ${
+                                  (submission.status === "Evaluated" || submission.status === "Finalized")
+                                    ? "bg-green-600 cursor-not-allowed"
+                                    : evaluatingSubmission === submission.submission_id
+                                    ? "bg-blue-400 cursor-not-allowed"
+                                    : "bg-blue-600 hover:bg-blue-700"
+                                }`}
                               >
                                 {evaluatingSubmission === submission.submission_id
                                   ? "Evaluating..."

@@ -1,5 +1,5 @@
-"use client";
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+﻿"use client";
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -15,7 +15,7 @@ import Select from "react-select";
 export default function Home() {
 
     const router = useRouter();
-
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
     const [checkingAuth, setCheckingAuth] = useState(true);
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [activeSection, setActiveSection] = useState("Dashboard");
@@ -83,7 +83,7 @@ export default function Home() {
     };
 
 
-    // AUTH CHECK — must be faculty role
+    // AUTH CHECK â€” must be faculty role
     // useEffect(() => {
     //   const token = localStorage.getItem("token");
     //   const role = localStorage.getItem("userRole");
@@ -132,7 +132,7 @@ export default function Home() {
     }, []);
 
 
-    // AUTOSAVE — only saves when there is actual content
+    // AUTOSAVE â€” only saves when there is actual content
     useEffect(() => {
         const hasContent = title.trim() || questions.some((q) => q.question?.trim());
         if (!hasContent) return;
@@ -341,7 +341,7 @@ export default function Home() {
     };
 
 
-    // ADD QUESTION — inserts after current index
+    // ADD QUESTION â€” inserts after current index
     const addQuestionCard = (index) => {
         const newQuestion = {
             question_id: "",
@@ -928,3 +928,4 @@ export default function Home() {
         </div>
     );
 }
+
