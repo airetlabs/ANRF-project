@@ -1,5 +1,5 @@
 "use client";
-
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 
@@ -130,7 +130,7 @@ export default function AssessmentCard({
     try {
 
       const response = await fetch(
-        `http://localhost:8000/assessment/delete/${assessment._id}`,
+        `${API_URL}/assessment/delete/${assessment._id}`,
         { method: "DELETE" }
       );
 

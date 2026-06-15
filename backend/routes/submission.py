@@ -170,7 +170,7 @@ def get_submissions_by_assessment(assessment_id: str):
             "student_email": submission["student_email"],
             "status": submission.get("status", "Pending Evaluation"),
             "submitted_at": submission["submitted_at"],
-            "final_marks": round(total_marks, 2)
+            "final_marks": round(total_marks)
         })
 
     return result
@@ -327,6 +327,24 @@ def review_submission(submission_id: str):
 
         ai_marks = evaluation.get("suggested_marks", 0) if evaluation else 0
         final_marks = correction.get("faculty_marks", ai_marks) if correction else ai_marks
+        
+        feedback = []
+
+        if evaluation:
+            breakdown = evaluation.get(
+                "technical_score_breakdown",
+                {}
+            )
+
+            for point, value in breakdown.items():
+
+                value = str(value).lower()
+
+                if "matched" in value and "not matched" not in value:
+                    feedback.append(f"✓ {point} present")
+
+                elif "not matched" in value:
+                    feedback.append(f"✗ {point} missing")
 
         result.append({
             "question_id": question["question_id"],
@@ -334,7 +352,8 @@ def review_submission(submission_id: str):
             "max_marks": question.get("max_marks", 0),
             "student_answer": answer["answer_text"] if answer else "",
             "ai_marks": ai_marks,
-            "faculty_marks": final_marks
+            "faculty_marks": final_marks,
+            "feedback": feedback
         })
 
     return result
@@ -406,7 +425,7 @@ def save_correction(data: dict):
         {"_id": ObjectId(data["submission_id"])},
         {"$set": {
             "status": "Finalized",
-            "final_marks": round(total, 2)
+            "final_marks": round(total)
         }}
     )
 

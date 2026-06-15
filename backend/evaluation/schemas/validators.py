@@ -2,12 +2,12 @@ from pydantic import BaseModel
 
 class SingleRubric(BaseModel):
   rubrics_id:int
-  marks:int
+  marks:float
   content:str
 
 class Marks_rubrics(BaseModel):
   rubrics_id:int
-  total_marks:int
+  total_marks:float
   label:str
   semantic_similarity:float
   faculty_rubric_statement:str
@@ -15,7 +15,7 @@ class Marks_rubrics(BaseModel):
 
 class Technical_terms(BaseModel):
   technical_term:str
-  weightage:int
+  weightage:float
   
 def pydantic_validation_similarity_score(marks_breakdown):
   verified_marks_rubric=[Marks_rubrics(**rubric) for rubric in marks_breakdown]

@@ -1,4 +1,5 @@
 "use client";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -51,7 +52,7 @@ export default function RegisterPage() {
         year,
       };
 
-      const response = await fetch("http://127.0.0.1:8000/auth/register", {
+      const response = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -82,7 +83,7 @@ export default function RegisterPage() {
         <div className="text-center mb-6">
           <div className="text-6xl mb-3">🎓</div>
           <h1 className="text-4xl font-bold text-slate-900">Student Register</h1>
-          <p className="text-slate-500 mt-2">Create your student account for AssessPro</p>
+          <p className="text-slate-500 mt-2">Create your student account for AcadAIsist</p>
         </div>
 
         {/* FORM */}
