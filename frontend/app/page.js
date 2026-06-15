@@ -20,42 +20,42 @@ export default function LandingPage() {
   }, []);
 
   const features = [
-    { icon: "?", title: "AI Evaluation", desc: "Instant, objective grading via SLM pipeline", accent: "border-t-blue-600", bg: "bg-blue-50", iconColor: "text-blue-600" },
-    { icon: "??", title: "Rubric Scoring", desc: "Faculty-defined rubrics applied consistently", accent: "border-t-green-600", bg: "bg-green-50", iconColor: "text-green-600" },
-    { icon: "??", title: "Analytics", desc: "Score trends and class performance insight", accent: "border-t-purple-600", bg: "bg-purple-50", iconColor: "text-purple-600" },
-    { icon: "??", title: "Dual Roles", desc: "Separate dashboards for faculty & students", accent: "border-t-amber-500", bg: "bg-amber-50", iconColor: "text-amber-600" },
+    { icon: "AI", title: "AI Evaluation", desc: "Instant, objective grading via SLM pipeline", accent: "border-t-blue-600", bg: "bg-blue-50", iconColor: "text-blue-600" },
+    { icon: "RB", title: "Rubric Scoring", desc: "Faculty-defined rubrics applied consistently", accent: "border-t-green-600", bg: "bg-green-50", iconColor: "text-green-600" },
+    { icon: "AN", title: "Analytics", desc: "Score trends and class performance insight", accent: "border-t-purple-600", bg: "bg-purple-50", iconColor: "text-purple-600" },
+    { icon: "DR", title: "Dual Roles", desc: "Separate dashboards for faculty & students", accent: "border-t-amber-500", bg: "bg-amber-50", iconColor: "text-amber-600" },
   ];
 
   const stats = [
     { val: "AI", label: "Grading", color: "text-blue-800" },
     { val: "SLM", label: "Powered", color: "text-green-800" },
-    { val: "2×", label: "Faster", color: "text-purple-800" },
+    { val: "2x", label: "Faster", color: "text-purple-800" },
     { val: "Fair", label: "Scoring", color: "text-amber-800" },
   ];
 
   const roles = [
     {
-      icon: "???",
+      icon: "AD",
       title: "Admin",
       desc: "Manage users, departments and system settings",
       color: "border-red-200 hover:border-red-400 hover:bg-red-50",
-      iconBg: "bg-red-50",
+      iconBg: "bg-red-50 text-red-600",
       route: "/login",
     },
     {
-      icon: "?????",
+      icon: "FC",
       title: "Faculty",
       desc: "Create assessments, evaluate and review submissions",
       color: "border-blue-200 hover:border-blue-400 hover:bg-blue-50",
-      iconBg: "bg-blue-50",
+      iconBg: "bg-blue-50 text-blue-600",
       route: "/login",
     },
     {
-      icon: "??",
+      icon: "ST",
       title: "Student",
       desc: "Register, submit answers and view AI marks",
       color: "border-green-200 hover:border-green-400 hover:bg-green-50",
-      iconBg: "bg-green-50",
+      iconBg: "bg-green-50 text-green-600",
       route: "/student/register",
     },
   ];
@@ -66,7 +66,6 @@ export default function LandingPage() {
       style={{ overflow: "hidden" }}
     >
       <div className="w-full max-w-3xl">
-
         {/* Header row */}
         <div className="anim flex items-center justify-between mb-7 pb-7 border-b border-slate-200">
           <div>
@@ -76,14 +75,17 @@ export default function LandingPage() {
             <h1 className="text-5xl font-bold text-slate-900 tracking-tight leading-none">
               AcadAIsist
             </h1>
-            <div className="h-[3px] rounded-full bg-blue-600 mt-2" style={{ animation: "glowLine 2s ease-in-out infinite", width: "40px" }} />
+            <div className="h-[3px] rounded-full bg-blue-600 mt-2" style={{ width: "40px" }} />
             <p className="text-slate-500 text-sm leading-relaxed mt-3 max-w-xs">
-              Reducing faculty workload without compromising academic rigour  powered by Small Language Models.
+              Reducing faculty workload without compromising academic rigour — powered by Small Language Models.
             </p>
           </div>
-          <div style={{ animation: "float 3.5s ease-in-out infinite" }} className="flex-shrink-0">
-            <div className="w-20 h-20 rounded-2xl bg-blue-800 flex items-center justify-center text-4xl border-2 border-blue-900 shadow-lg">
-              ??
+          <div className="flex-shrink-0">
+            <div className="w-20 h-20 rounded-2xl bg-blue-800 flex items-center justify-center border-2 border-blue-900 shadow-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+              </svg>
             </div>
           </div>
         </div>
@@ -102,8 +104,8 @@ export default function LandingPage() {
         <div className="anim grid grid-cols-4 gap-2.5 mb-5">
           {features.map((f) => (
             <div key={f.title} className={`bg-white rounded-2xl p-4 border border-slate-200 shadow-sm hover:-translate-y-1 transition-transform duration-200 relative overflow-hidden border-t-2 ${f.accent}`}>
-              <div className={`w-8 h-8 ${f.bg} border border-slate-100 rounded-lg flex items-center justify-center text-base mb-2.5`}>
-                <span className={`text-sm ${f.iconColor}`}>{f.icon}</span>
+              <div className={`w-8 h-8 ${f.bg} border border-slate-100 rounded-lg flex items-center justify-center text-xs font-bold mb-2.5 ${f.iconColor}`}>
+                {f.icon}
               </div>
               <p className="font-semibold text-slate-800 text-xs mb-1">{f.title}</p>
               <p className="text-slate-400 text-xs leading-relaxed">{f.desc}</p>
@@ -128,7 +130,7 @@ export default function LandingPage() {
             <div className="w-9 h-9 bg-green-50 border border-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
               </svg>
             </div>
             <div>
@@ -163,11 +165,10 @@ export default function LandingPage() {
               onClick={() => setShowRoleModal(true)}
               className="bg-blue-800 hover:bg-blue-900 active:scale-95 text-white font-semibold px-7 py-3 rounded-xl transition-all duration-150 text-sm shadow-md"
             >
-              Get Started ?
+              Get Started
             </button>
           </div>
         </div>
-
       </div>
 
       {/* ROLE SELECTION MODAL */}
@@ -184,7 +185,6 @@ export default function LandingPage() {
               <h2 className="text-2xl font-bold text-slate-900">Who are you?</h2>
               <p className="text-slate-500 text-sm mt-1">Select your role to continue</p>
             </div>
-
             <div className="flex flex-col gap-3">
               {roles.map((role) => (
                 <button
@@ -192,38 +192,25 @@ export default function LandingPage() {
                   onClick={() => router.push(role.route)}
                   className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all duration-150 text-left ${role.color}`}
                 >
-                  <div className={`w-12 h-12 ${role.iconBg} rounded-xl flex items-center justify-center text-2xl flex-shrink-0`}>
+                  <div className={`w-12 h-12 ${role.iconBg} rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0`}>
                     {role.icon}
                   </div>
                   <div>
                     <p className="font-bold text-slate-900">{role.title}</p>
                     <p className="text-xs text-slate-500 mt-0.5">{role.desc}</p>
                   </div>
-                  <span className="ml-auto text-slate-400 text-lg">?</span>
                 </button>
               ))}
             </div>
-
             <button
               onClick={() => setShowRoleModal(false)}
-              className="w-full mt-4 text-slate-400 hover:text-slate-600 text-sm py-2 transition"
+              className="w-full mt-4 text-slate-400 text-sm hover:text-slate-600 transition-colors"
             >
               Cancel
             </button>
           </div>
         </div>
       )}
-
-      <style jsx global>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-8px); }
-        }
-        @keyframes glowLine {
-          0%, 100% { width: 40px; }
-          50% { width: 72px; }
-        }
-      `}</style>
     </div>
   );
 }
