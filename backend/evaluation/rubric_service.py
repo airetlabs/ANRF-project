@@ -11,9 +11,9 @@ out = StrOutputParser()
 def generate_atomic_rubric(faculty_rubric):
 
     system_instruction = """
-You are a rubric parser.
+Given a faculty-written rubric.
 
-Given a faculty-written rubric, split it into atomic rubric points.
+Analyse the faculy rubrics properly and write a short line in content for corresponding marks
 
 Return ONLY a valid JSON array.
 
@@ -21,8 +21,8 @@ Rules:
 1. Output must start with '[' and end with ']'.
 2. Do not include explanations, notes, or extra text.
 3. Each rubric point must be a JSON object.
-4. rubrics_id must be a string.
-5. marks must be an integer.
+4. rubrics_id must be a integer.
+5. marks must be an integer/float.
 6. content must be a string.
 
 [
@@ -49,9 +49,6 @@ Rules:
     print(response)
     print("--------------------------------------------------------------------------")
     response = json.loads(response)
-    print("--------------------------------------------------------------------------")
-    print(response)
-    print("--------------------------------------------------------------------------")
     verified_rubric = [SingleRubric(**rubric) for rubric in response]
     dict_data = [obj.model_dump() for obj in verified_rubric]
     return dict_data
@@ -72,10 +69,15 @@ def accessing_faculty_input(question_id, assessment_id):
     })
     if not answer_key_doc or not answer_key_doc.get("key_text"):
         return
-
+    
+    question_doc=db.Question.find_one({"question_id":question_id,"assessment_id":assessment_id})
+    if question_doc and question_doc.get("generated_rubrics"):
+        return 
     atomic_rubric_json = generate_atomic_rubric(rubric_doc["rubric_text"])
 
     db.Rubric.update_one(
         {"question_id": question_id, "assessment_id": assessment_id},
         {"$set": {"verified_points_json": atomic_rubric_json}},
     )
+    db.Question.update_one({"question_id":question_id,"assessment_id":assessment_id},
+                            {"$set":{"generated_rubrics":True}})
