@@ -93,8 +93,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://anrf-project-product
     //     setCheckingAuth(false);
     //   }
     // }, []);
-
-    useEffect(() => {
+useEffect(() => {
+    const timer = setTimeout(() => {
         const token = localStorage.getItem("token");
         const role = localStorage.getItem("userRole");
         if (!token || role !== "faculty") {
@@ -102,7 +102,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://anrf-project-product
         } else {
             setCheckingAuth(false);
         }
-    }, []);
+    }, 100);
+    return () => clearTimeout(timer);
+}, []);
 
 
     // LOAD AUTOSAVE

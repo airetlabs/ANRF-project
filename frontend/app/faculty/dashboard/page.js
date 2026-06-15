@@ -652,7 +652,7 @@ export default function Home() {
                           title="Delete this question"
                           className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-red-500 hover:text-white text-slate-600 flex items-center justify-center transition font-bold text-lg flex-shrink-0"
                         >
-                          ×
+                          Ã
                         </button>
                       </div>
                     );
@@ -696,7 +696,7 @@ export default function Home() {
                     onClick={() => setDialogOpen(false)}
                     className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 text-xl font-bold transition"
                   >
-                    ×
+                    Ã
                   </button>
                 </div>
 

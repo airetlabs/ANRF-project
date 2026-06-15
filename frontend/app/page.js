@@ -29,7 +29,7 @@ export default function LandingPage() {
   const stats = [
     { val: "AI", label: "Grading", color: "text-blue-800" },
     { val: "SLM", label: "Powered", color: "text-green-800" },
-    { val: "2×", label: "Faster", color: "text-purple-800" },
+    { val: "2Ã—", label: "Faster", color: "text-purple-800" },
     { val: "Fair", label: "Scoring", color: "text-amber-800" },
   ];
 
@@ -78,7 +78,7 @@ export default function LandingPage() {
             </h1>
             <div className="h-[3px] rounded-full bg-blue-600 mt-2" style={{ animation: "glowLine 2s ease-in-out infinite", width: "40px" }} />
             <p className="text-slate-500 text-sm leading-relaxed mt-3 max-w-xs">
-              Reducing faculty workload without compromising academic rigour — powered by Small Language Models.
+              Reducing faculty workload without compromising academic rigour Â— powered by Small Language Models.
             </p>
           </div>
           <div style={{ animation: "float 3.5s ease-in-out infinite" }} className="flex-shrink-0">
