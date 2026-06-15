@@ -1,4 +1,5 @@
 "use client";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -40,7 +41,7 @@ export default function AdminDashboard() {
 
   const fetchFaculty = async () => {
     try {
-      const res = await fetch("https://anrf-project-production.up.railway.app/auth/faculty");
+      const res = await fetch(`${API_URL}/auth/faculty`);
       if (res.ok) {
         const data = await res.json();
         setFacultyList(data);
@@ -52,7 +53,7 @@ export default function AdminDashboard() {
 
   const fetchAssessments = async () => {
     try {
-      const res = await fetch("https://anrf-project-production.up.railway.app/assessment/admin/all");
+      const res = await fetch(`${API_URL}/assessment/admin/all`);
       if (res.ok) {
         const data = await res.json();
         setAssessments(data);
@@ -64,7 +65,7 @@ export default function AdminDashboard() {
 
   const fetchSubmissions = async () => {
     try {
-      const res = await fetch("https://anrf-project-production.up.railway.app/submission/all");
+      const res = await fetch(`${API_URL}/submission/all`);
       if (res.ok) {
         const data = await res.json();
         setSubmissions(data);
@@ -81,7 +82,7 @@ export default function AdminDashboard() {
     }
     try {
       setCreating(true);
-      const res = await fetch("https://anrf-project-production.up.railway.app/auth/register", {
+      const res = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -113,7 +114,7 @@ export default function AdminDashboard() {
     if (!window.confirm(`Delete faculty account: ${email}?`)) return;
     try {
       const res = await fetch(
-        `https://anrf-project-production.up.railway.app/auth/faculty/${encodeURIComponent(email)}`,
+        `${API_URL}/auth/faculty/${encodeURIComponent(email)}`,
         { method: "DELETE" }
       );
       if (res.ok) {
@@ -129,7 +130,7 @@ export default function AdminDashboard() {
 
   const logout = () => {
     localStorage.clear();
-    router.push("/login");
+    router.push("/");
   };
 
   const tabs = [
@@ -144,7 +145,7 @@ export default function AdminDashboard() {
       {/* NAVBAR */}
       <div className="bg-white border-b border-slate-200 px-8 py-5 flex items-center justify-between sticky top-0 z-50 shadow-sm">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">AssessPro</h1>
+          <h1 className="text-2xl font-bold text-slate-900">AcadAIsist</h1>
           <p className="text-slate-500 text-sm">Admin Control Panel</p>
         </div>
         <div className="flex items-center gap-4">

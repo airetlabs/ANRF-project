@@ -1,4 +1,5 @@
-# AssessPro – Academic Evaluation System
+# AcadAIsist: – A Small Language Model Based Lightweight and Accessible Evaluation Tool for
+Reducing Faculty Workload Without Compromising Academic Rigour
 
 A full stack academic evaluation platform for faculty members to create, manage, publish, and analyze assessments.
 
@@ -104,7 +105,7 @@ uvicorn main:app --reload
 Backend runs on:
 
 ```bash
-anrf-project-production.up.railway.app
+anrf-project-production-a47a.up.railway.app
 Deploying....
 ```
 
@@ -122,5 +123,5 @@ Password: admin123
 # API Documentation
 
 ```bash
-anrf-project-production.up.railway.app/docs
+anrf-project-production-a47a.up.railway.app/docs
 ```

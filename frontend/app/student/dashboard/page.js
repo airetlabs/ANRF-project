@@ -1,4 +1,5 @@
 "use client";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -41,7 +42,7 @@ export default function StudentDashboard() {
       const email = localStorage.getItem("userEmail");
 
       const assessmentResponse = await fetch(
-        `https://anrf-project-production.up.railway.app/assessment/student/${department}/${year}`
+        `${API_URL}/assessment/student/${department}/${year}`
       );
       const assessmentData = await assessmentResponse.json();
 
@@ -54,7 +55,7 @@ export default function StudentDashboard() {
       setAssessments(sorted);
 
       const submissionResponse = await fetch(
-        `https://anrf-project-production.up.railway.app/submission/student/${email}`
+        `${API_URL}/submission/student/${email}`
       );
       const submissionData = await submissionResponse.json();
       const submittedAssessmentIds = submissionData.map(
@@ -71,7 +72,7 @@ export default function StudentDashboard() {
 
   const logout = () => {
     localStorage.clear();
-    router.push("/login");
+    router.push("/");
   };
 
   if (loading) {
@@ -79,7 +80,7 @@ export default function StudentDashboard() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 via-slate-50 to-slate-200">
         <div className="text-center">
           <div className="w-14 h-14 border-4 border-slate-300 border-t-slate-900 rounded-full animate-spin mx-auto mb-6"></div>
-          <h2 className="text-2xl font-bold text-slate-900">Loading AssessPro</h2>
+          <h2 className="text-2xl font-bold text-slate-900">Loading AcadAIsist</h2>
           <p className="text-slate-500 mt-2">Fetching your assessments...</p>
         </div>
       </div>
@@ -92,7 +93,7 @@ export default function StudentDashboard() {
       {/* NAVBAR */}
       <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 py-5 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">AssessPro</h1>
+          <h1 className="text-2xl font-bold text-slate-900">AcadAIsist</h1>
           <p className="text-slate-500 text-sm mt-1">Student Portal</p>
         </div>
         <div className="flex items-center gap-4">
@@ -155,6 +156,18 @@ export default function StudentDashboard() {
 
               const isSubmitted = submittedIds.includes(assessment._id);
 
+              const now = new Date();
+              const start = new Date(assessment.availableFrom);
+              const end = new Date(assessment.availableTo);
+
+              let assessmentStatus = "Live";
+
+              if (now < start) {
+                assessmentStatus = "Upcoming";
+              } else if (now > end) {
+                assessmentStatus = "Expired";
+              }
+
               return (
                 <div
                   key={assessment._id}
@@ -171,8 +184,15 @@ export default function StudentDashboard() {
                         Submitted
                       </span>
                     ) : (
-                      <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap">
-                        Available
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap text-white ${assessmentStatus === "Live"
+                          ? "bg-green-600"
+                          : assessmentStatus === "Upcoming"
+                            ? "bg-yellow-500"
+                            : "bg-red-600"
+                          }`}
+                      >
+                        {assessmentStatus}
                       </span>
                     )}
                   </div>
@@ -198,9 +218,15 @@ export default function StudentDashboard() {
                   ) : (
                     <button
                       onClick={() => router.push(`/student/assessment/${assessment._id}`)}
-                      className="w-full bg-slate-900 hover:bg-slate-700 text-white py-3 rounded-2xl font-semibold transition"
+                      disabled={assessmentStatus === "Expired"}
+                      className={`w-full py-3 rounded-2xl font-semibold transition ${assessmentStatus === "Expired"
+                          ? "bg-gray-400 text-white cursor-not-allowed"
+                          : "bg-slate-900 hover:bg-slate-700 text-white"
+                        }`}
                     >
-                      Open Assessment
+                      {assessmentStatus === "Expired"
+                        ? "Assessment Expired"
+                        : "Open Assessment"}
                     </button>
                   )}
 

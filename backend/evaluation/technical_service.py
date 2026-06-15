@@ -89,7 +89,9 @@ def access_similarity_for_technical_evaluation(question_id, assessment_id):
     })
     if not rubric_doc:
         return
-
+    question_doc=db.Question.find_one({"question_id":question_id,"assessment_id":assessment_id})
+    if question_doc and question_doc.get("generated_tech_words"):
+        return
     atomic_rubric = rubric_doc.get("verified_points_json")
 
     answer_key_doc = db.AnswerKey.find_one({
@@ -103,7 +105,14 @@ def access_similarity_for_technical_evaluation(question_id, assessment_id):
     technical_terms_json = []
     try:
         if atomic_rubric is not None:
+            
             technical_terms_json = technical_terms_extraction(atomic_rubric, faculty_ans)
+            db.Rubric.update_one(
+            {"question_id": question_id, "assessment_id": assessment_id},
+            {"$set": {"technical_terms": technical_terms_json}},
+        )
+            db.Question.update_one({"question_id":question_id,"assessment_id":assessment_id},
+                                {"$set":{"generated_tech_words":True}})
         else:
             print(
                 f"Warning: atomic_rubric is None for question_id {question_id}. "
@@ -113,10 +122,7 @@ def access_similarity_for_technical_evaluation(question_id, assessment_id):
         print(f"Error extracting technical terms for question_id {question_id}: {e}")
 
     # FIX — update correct rubric document using assessment_id
-    db.Rubric.update_one(
-        {"question_id": question_id, "assessment_id": assessment_id},
-        {"$set": {"technical_terms": technical_terms_json}},
-    )
+    
 
 
 def cal_technical_score(student_id, question_id, assessment_id):

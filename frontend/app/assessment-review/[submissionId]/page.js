@@ -1,4 +1,5 @@
 "use client";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -21,7 +22,7 @@ export default function AssessmentReviewPage() {
     const fetchReview = async () => {
         try {
             const response = await fetch(
-                `https://anrf-project-production.up.railway.app/submission/review/${submissionId}`
+                `${API_URL}/submission/review/${submissionId}`
             );
             const data = await response.json();
             setQuestions(data);
@@ -39,7 +40,7 @@ export default function AssessmentReviewPage() {
                     facultyMarks[q.question_id] ?? q.ai_marks;
 
                 await fetch(
-                    "https://anrf-project-production.up.railway.app/submission/save-correction",
+                    `${API_URL}/submission/save-correction`,
                     {
                         method: "POST",
                         headers: {
@@ -91,7 +92,7 @@ export default function AssessmentReviewPage() {
                         "openSubmissions",
                         "true"
                     );
-                    router.push("/");
+                    router.push("/faculty/dashboard");
                 }}
                 className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-4"
             >
@@ -144,6 +145,44 @@ export default function AssessmentReviewPage() {
                                 <p className="text-slate-800 leading-8 whitespace-pre-wrap">
                                     {q.student_answer || "No answer provided"}
                                 </p>
+
+                                <div className="mt-3 flex gap-6 text-sm text-slate-500">
+                                    <span>
+                                        Words: {
+                                            q.student_answer
+                                                ? q.student_answer.trim().split(/\s+/).filter(Boolean).length
+                                                : 0
+                                        }
+                                    </span>
+
+                                    <span>
+                                        Characters: {q.student_answer?.length || 0}
+                                    </span>
+                                </div>
+
+                                {/* RUBRIC FEEDBACK */}
+                                {q.feedback?.length > 0 && (
+                                    <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                                        <h3 className="font-semibold text-slate-700 mb-2">
+                                            Rubric Feedback
+                                        </h3>
+
+                                        <ul className="space-y-1">
+                                            {q.feedback.map((item, idx) => (
+                                                <li
+                                                    key={idx}
+                                                    className={
+                                                        item.startsWith("✓")
+                                                            ? "text-green-700"
+                                                            : "text-red-600"
+                                                    }
+                                                >
+                                                    {item}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
                             </div>
 
                             {/* MARKS SECTION */}
@@ -238,7 +277,7 @@ export default function AssessmentReviewPage() {
                             <div>
                                 <p className="text-slate-400 text-sm">Final Assessment Marks</p>
                                 <p className="text-3xl font-bold mt-1">
-                                    {Math.round(finalTotal * 100) / 100}
+                                    {Math.round(finalTotal)}
                                 </p>
                             </div>
                             <button
