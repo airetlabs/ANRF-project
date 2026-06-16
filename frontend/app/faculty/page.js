@@ -828,7 +828,7 @@ useEffect(() => {
                         <div>
                             <div className="mb-8">
                                 <h2 className="text-4xl font-bold text-slate-900 mb-3">Student Submissions</h2>
-                                <p className="text-slate-500 text-lg">Assessment ID: {selectedAssessmentId}</p>
+                                <p className="text-slate-500 text-lg">Assessment: {savedAssessments.find(a => a._id === selectedAssessmentId)?.title || selectedAssessmentId}</p>
                             </div>
 
                             {loadingSubmissions ? (

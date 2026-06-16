@@ -50,9 +50,9 @@ export default function Sidebar({
             )}
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="bg-slate-800 hover:bg-slate-700 transition w-9 h-9 rounded-xl flex items-center justify-center text-sm"
+              className="bg-slate-800 hover:bg-slate-700 transition w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold"
             >
-              ?
+              {sidebarOpen ? "←" : "→"}
             </button>
           </div>
 
@@ -67,7 +67,7 @@ export default function Sidebar({
                   : "text-slate-300 hover:bg-slate-800"
                 }`}
               >
-                <div className={`w-2 h-2 rounded-full ${activeSection === item ? "bg-white" : "bg-slate-400"}`} />
+                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${activeSection === item ? "bg-white" : "bg-slate-400"}`} />
                 {sidebarOpen && <span className="font-medium text-sm">{item}</span>}
               </button>
             ))}
@@ -76,7 +76,7 @@ export default function Sidebar({
 
         <div className="border-t border-slate-800 pt-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-sky-600 flex items-center justify-center font-bold text-sm">
+            <div className="w-10 h-10 rounded-xl bg-sky-600 flex items-center justify-center font-bold text-sm flex-shrink-0">
               {userEmail ? userEmail[0].toUpperCase() : "F"}
             </div>
             {sidebarOpen && (
