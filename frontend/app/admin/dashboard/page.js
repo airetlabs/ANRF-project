@@ -44,7 +44,10 @@ export default function AdminDashboard() {
       const res = await fetch(`${API_URL}/auth/faculty`);
       if (res.ok) {
         const data = await res.json();
-        setFacultyList(data);
+
+        const sortedFaculty = [...data].reverse();
+
+        setFacultyList(sortedFaculty);
       }
     } catch (e) {
       console.error(e);
@@ -56,7 +59,10 @@ export default function AdminDashboard() {
       const res = await fetch(`${API_URL}/assessment/admin/all`);
       if (res.ok) {
         const data = await res.json();
-        setAssessments(data);
+
+        const sortedAssessments = [...data].reverse();
+
+        setAssessments(sortedAssessments);
       }
     } catch (e) {
       console.error(e);
@@ -68,7 +74,12 @@ export default function AdminDashboard() {
       const res = await fetch(`${API_URL}/submission/all`);
       if (res.ok) {
         const data = await res.json();
-        setSubmissions(data);
+
+        const sortedSubmissions = data.sort(
+          (a, b) => new Date(b.submitted_at) - new Date(a.submitted_at)
+        );
+
+        setSubmissions(sortedSubmissions);
       }
     } catch (e) {
       console.error(e);
@@ -134,9 +145,9 @@ export default function AdminDashboard() {
   };
 
   const tabs = [
-{ id: "faculty", label: "Faculty Management", emoji: "👨‍🏫" },
-{ id: "assessments", label: "All Assessments", emoji: "📋" },
-{ id: "submissions", label: "All Submissions", emoji: "📝" },
+    { id: "faculty", label: "Faculty Management", emoji: "👨‍🏫" },
+    { id: "assessments", label: "All Assessments", emoji: "📋" },
+    { id: "submissions", label: "All Submissions", emoji: "📝" },
   ];
 
   return (
@@ -185,11 +196,10 @@ export default function AdminDashboard() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-5 py-3 rounded-xl font-semibold text-sm transition ${
-                activeTab === tab.id
-                  ? "bg-slate-900 text-white"
-                  : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
-              }`}
+              className={`px-5 py-3 rounded-xl font-semibold text-sm transition ${activeTab === tab.id
+                ? "bg-slate-900 text-white"
+                : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+                }`}
             >
               {tab.emoji} {tab.label}
             </button>
@@ -199,11 +209,10 @@ export default function AdminDashboard() {
         {/* MESSAGE */}
         {message.text && (
           <div
-            className={`mb-6 px-5 py-3 rounded-xl font-medium text-sm ${
-              message.type === "success"
-                ? "bg-green-50 text-green-700 border border-green-200"
-                : "bg-red-50 text-red-700 border border-red-200"
-            }`}
+            className={`mb-6 px-5 py-3 rounded-xl font-medium text-sm ${message.type === "success"
+              ? "bg-green-50 text-green-700 border border-green-200"
+              : "bg-red-50 text-red-700 border border-red-200"
+              }`}
           >
             {message.text}
           </div>
@@ -338,11 +347,10 @@ export default function AdminDashboard() {
                       <td className="px-8 py-4 text-slate-600 text-sm">{a.faculty_email}</td>
                       <td className="px-8 py-4 text-slate-600 text-sm">{a.subjectName}</td>
                       <td className="px-8 py-4">
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          a.status === "Published"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-amber-100 text-amber-700"
-                        }`}>
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${a.status === "Published"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-amber-100 text-amber-700"
+                          }`}>
                           {a.status}
                         </span>
                       </td>
@@ -391,11 +399,10 @@ export default function AdminDashboard() {
                           : ""}
                       </td>
                       <td className="px-8 py-4">
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          s.status === "Evaluated"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-blue-100 text-blue-700"
-                        }`}>
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${s.status === "Evaluated"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-blue-100 text-blue-700"
+                          }`}>
                           {s.status}
                         </span>
                       </td>
