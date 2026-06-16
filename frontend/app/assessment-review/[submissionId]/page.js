@@ -205,11 +205,11 @@ export default function AssessmentReviewPage() {
                                         <span className="font-semibold text-slate-700 text-sm">AI Marks</span>
                                     
 <span className={`px-4 py-2 rounded-lg font-bold ${
-    q.ai_marks != null && q.ai_marks > 0
+    q.ai_marks !== null && q.ai_marks !== undefined
         ? "bg-green-100 text-green-700"
         : "bg-yellow-100 text-yellow-700"
 }`}>
-    {q.ai_marks != null && q.ai_marks > 0 ? q.ai_marks : "Evaluation Pending"}
+    {q.ai_marks !== null && q.ai_marks !== undefined ? q.ai_marks : "Evaluation Pending"}
 </span>
                                         <span className="text-slate-400 text-sm">/ {q.max_marks}</span>
                                     </div>
