@@ -1,7 +1,7 @@
 from database import db
 from bson import ObjectId
 from pprint import pprint
-for doc in db.Assessment.find():
+for doc in db.EvaluationResult.find():
     pprint(doc)
-# for doc in db.list_collection_names():
-#     db[doc].delete_many({})
+for doc in db.list_collection_names():
+    db[doc].delete_many({})
