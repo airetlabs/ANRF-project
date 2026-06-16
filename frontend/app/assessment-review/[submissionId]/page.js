@@ -26,6 +26,16 @@ export default function AssessmentReviewPage() {
             );
             const data = await response.json();
             setQuestions(data);
+
+            // Pre-fill faculty marks from saved corrections
+            const preFilledMarks = {};
+            data.forEach((q) => {
+                if (q.faculty_marks !== null && q.faculty_marks !== undefined) {
+                    preFilledMarks[q.question_id] = q.faculty_marks;
+                }
+            });
+            setFacultyMarks(preFilledMarks);
+
         } catch (error) {
             console.error(error);
         } finally {
@@ -36,24 +46,18 @@ export default function AssessmentReviewPage() {
     const finalizeEvaluation = async () => {
         try {
             for (const q of questions) {
-                const facultyMark =
-                    facultyMarks[q.question_id] ?? q.ai_marks;
+                const facultyMark = facultyMarks[q.question_id] ?? q.ai_marks;
 
-                await fetch(
-                    `${API_URL}/submission/save-correction`,
-                    {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({
-                            submission_id: submissionId,
-                            question_id: q.question_id,
-                            ai_marks: q.ai_marks,
-                            faculty_marks: Number(facultyMark)
-                        })
-                    }
-                );
+                await fetch(`${API_URL}/submission/save-correction`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        submission_id: submissionId,
+                        question_id: q.question_id,
+                        ai_marks: q.ai_marks,
+                        faculty_marks: Number(facultyMark)
+                    })
+                });
             }
             alert("Evaluation Finalized Successfully");
             localStorage.setItem("openSubmissions", "true");
@@ -66,14 +70,19 @@ export default function AssessmentReviewPage() {
 
     const finalTotal = questions.reduce(
         (sum, q) =>
-            sum +
-            Number(
-                facultyMarks[q.question_id] ??
-                q.ai_marks ??
-                0
-            ),
+            sum + Number(facultyMarks[q.question_id] ?? q.ai_marks ?? 0),
         0
     );
+
+    // Check if ai_marks is actually evaluated (null/undefined = not evaluated)
+    const isEvaluated = (q) =>
+        q.ai_marks !== null && q.ai_marks !== undefined;
+
+    // Check if faculty has previously saved a different mark than AI
+    const hasFacultyEdit = (q) => {
+        const saved = facultyMarks[q.question_id];
+        return saved !== undefined && saved !== null && saved !== q.ai_marks;
+    };
 
     if (loading) {
         return (
@@ -88,18 +97,13 @@ export default function AssessmentReviewPage() {
 
             <button
                 onClick={() => {
-                    localStorage.setItem(
-                        "openSubmissions",
-                        "true"
-                    );
+                    localStorage.setItem("openSubmissions", "true");
                     router.push("/faculty/dashboard");
                 }}
                 className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-4"
             >
                 <span className="text-xl">←</span>
-                <span className="font-semibold">
-                    Back to Submissions
-                </span>
+                <span className="font-semibold">Back to Submissions</span>
             </button>
 
             <h1 className="text-3xl font-bold text-slate-900 mb-8">
@@ -132,9 +136,7 @@ export default function AssessmentReviewPage() {
                                 <h3 className="font-semibold text-slate-700 mb-2 text-sm uppercase tracking-wide">
                                     Question
                                 </h3>
-                                <p className="text-slate-800 leading-7">
-                                    {q.question}
-                                </p>
+                                <p className="text-slate-800 leading-7">{q.question}</p>
                             </div>
 
                             {/* STUDENT ANSWER */}
@@ -146,30 +148,32 @@ export default function AssessmentReviewPage() {
                                     {q.student_answer || "No answer provided"}
                                 </p>
 
-                               {(() => {
-    const wordCount = q.student_answer ? q.student_answer.trim().split(/\s+/).filter(Boolean).length : 0;
-    const expectedLimit = Number(q.ans_length) || 0;
-    const isOver = expectedLimit > 0 && wordCount > expectedLimit;
-    return (
-        <div className="mt-3">
-            <div className="flex gap-6 text-sm text-slate-500 mb-2">
-                <span>Words: {wordCount}</span>
-                <span>Characters: {q.student_answer?.length || 0}</span>
-            </div>
-            {expectedLimit > 0 && (
-                <div className={`flex items-center gap-3 px-4 py-2 rounded-xl border text-sm font-semibold ${isOver ? "bg-red-50 border-red-200 text-red-700" : "bg-green-50 border-green-200 text-green-700"}`}>
-                    <span>{isOver ? "⚠️ Word Limit Exceeded" : "✓ Within Word Limit"}</span>
-                    <span className="ml-auto flex gap-4">
-                        <span>Student wrote: <strong>{wordCount} words</strong></span>
-                        <span>|</span>
-                        <span>Expected: <strong>{expectedLimit} words</strong></span>
-                        {isOver && <><span>|</span><span>Exceeded by: <strong>{wordCount - expectedLimit} words</strong></span></>}
-                    </span>
-                </div>
-            )}
-        </div>
-    );
-})()}
+                                {(() => {
+                                    const wordCount = q.student_answer
+                                        ? q.student_answer.trim().split(/\s+/).filter(Boolean).length
+                                        : 0;
+                                    const expectedLimit = Number(q.ans_length) || 0;
+                                    const isOver = expectedLimit > 0 && wordCount > expectedLimit;
+                                    return (
+                                        <div className="mt-3">
+                                            <div className="flex gap-6 text-sm text-slate-500 mb-2">
+                                                <span>Words: {wordCount}</span>
+                                                <span>Characters: {q.student_answer?.length || 0}</span>
+                                            </div>
+                                            {expectedLimit > 0 && (
+                                                <div className={`flex items-center gap-3 px-4 py-2 rounded-xl border text-sm font-semibold ${isOver ? "bg-red-50 border-red-200 text-red-700" : "bg-green-50 border-green-200 text-green-700"}`}>
+                                                    <span>{isOver ? "⚠️ Word Limit Exceeded" : "✓ Within Word Limit"}</span>
+                                                    <span className="ml-auto flex gap-4">
+                                                        <span>Student wrote: <strong>{wordCount} words</strong></span>
+                                                        <span>|</span>
+                                                        <span>Expected: <strong>{expectedLimit} words</strong></span>
+                                                        {isOver && <><span>|</span><span>Exceeded by: <strong>{wordCount - expectedLimit} words</strong></span></>}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
 
                                 {/* RUBRIC FEEDBACK */}
                                 {q.feedback?.length > 0 && (
@@ -177,16 +181,11 @@ export default function AssessmentReviewPage() {
                                         <h3 className="font-semibold text-slate-700 mb-2">
                                             Rubric Feedback
                                         </h3>
-
                                         <ul className="space-y-1">
                                             {q.feedback.map((item, idx) => (
                                                 <li
                                                     key={idx}
-                                                    className={
-                                                        item.startsWith("✓")
-                                                            ? "text-green-700"
-                                                            : "text-red-600"
-                                                    }
+                                                    className={item.startsWith("✓") ? "text-green-700" : "text-red-600"}
                                                 >
                                                     {item}
                                                 </li>
@@ -203,21 +202,22 @@ export default function AssessmentReviewPage() {
                                     {/* AI MARKS */}
                                     <div className="flex items-center gap-2">
                                         <span className="font-semibold text-slate-700 text-sm">AI Marks</span>
-                                    
-<span className={`px-4 py-2 rounded-lg font-bold ${
-    q.ai_marks !== null && q.ai_marks !== undefined
-        ? "bg-green-100 text-green-700"
-        : "bg-yellow-100 text-yellow-700"
-}`}>
-    {q.ai_marks !== null && q.ai_marks !== undefined ? q.ai_marks : "Evaluation Pending"}
-</span>
-                                        <span className="text-slate-400 text-sm">/ {q.max_marks}</span>
+                                        <span className={`px-4 py-2 rounded-lg font-bold ${
+                                            isEvaluated(q)
+                                                ? "bg-green-100 text-green-700"
+                                                : "bg-yellow-100 text-yellow-700"
+                                        }`}>
+                                            {isEvaluated(q) ? q.ai_marks : "Evaluation Pending"}
+                                        </span>
+                                        {isEvaluated(q) && (
+                                            <span className="text-slate-400 text-sm">/ {q.max_marks}</span>
+                                        )}
                                     </div>
 
-                                    {/* FACULTY MARKS (if edited) */}
-                                    {facultyMarks[q.question_id] !== undefined && (
+                                    {/* FACULTY MARKS — show if different from AI marks */}
+                                    {hasFacultyEdit(q) && (
                                         <div className="flex items-center gap-2 ml-4">
-                                            <span className="font-semibold text-slate-700 text-sm">Final Marks</span>
+                                            <span className="font-semibold text-slate-700 text-sm">Faculty Marks</span>
                                             <span className="bg-blue-100 text-blue-700 px-4 py-2 rounded-lg font-bold">
                                                 {facultyMarks[q.question_id]}
                                             </span>
@@ -226,20 +226,20 @@ export default function AssessmentReviewPage() {
                                     )}
 
                                     {/* EDIT / SAVE MARKS */}
-                           
-{!editingMarks[q.question_id] ? (
-    <button
-    
-disabled={q.ai_marks === null || q.ai_marks === undefined}
-onClick={() => setEditingMarks({ ...editingMarks, [q.question_id]: true })}
-className={`px-4 py-2 rounded-lg text-sm font-medium transition ml-2 text-white ${
-    q.ai_marks === null || q.ai_marks === undefined
-        ? "bg-slate-300 cursor-not-allowed"
-        : "bg-sky-600 hover:bg-sky-700"
-}`}
-    >
-        Edit Marks
-    </button>
+                                    {!editingMarks[q.question_id] ? (
+                                        <button
+                                            disabled={!isEvaluated(q)}
+                                            onClick={() =>
+                                                setEditingMarks({ ...editingMarks, [q.question_id]: true })
+                                            }
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition ml-2 text-white ${
+                                                !isEvaluated(q)
+                                                    ? "bg-slate-300 cursor-not-allowed"
+                                                    : "bg-sky-600 hover:bg-sky-700"
+                                            }`}
+                                        >
+                                            {hasFacultyEdit(q) ? "Edit Marks" : "Edit Marks"}
+                                        </button>
                                     ) : (
                                         <div className="flex items-center gap-3 ml-2">
                                             <span className="font-semibold text-slate-700 text-sm">
@@ -271,10 +271,7 @@ className={`px-4 py-2 rounded-lg text-sm font-medium transition ml-2 text-white 
                                             />
                                             <button
                                                 onClick={() =>
-                                                    setEditingMarks({
-                                                        ...editingMarks,
-                                                        [q.question_id]: false
-                                                    })
+                                                    setEditingMarks({ ...editingMarks, [q.question_id]: false })
                                                 }
                                                 className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition"
                                             >
