@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Mail, Lock, Eye, EyeOff, GraduationCap } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://anrf-project-production-a47a.up.railway.app";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function LoginPage() {
   const router = useRouter();
@@ -52,113 +52,119 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex bg-white">
 
-      {/* LEFT PANEL */}
-      <div className="hidden lg:flex w-1/2 bg-slate-900 flex-col justify-between p-12">
-        <div>
-          <div className="flex items-center gap-3 mb-16">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
-              <GraduationCap size={22} className="text-white" />
+      {/* LEFT — visual/quote panel */}
+      <div className="hidden lg:flex flex-col justify-between w-[42%] bg-gradient-to-br from-blue-700 via-blue-800 to-slate-900 p-12 relative overflow-hidden">
+
+        {/* Decorative circles */}
+        <div className="absolute top-[-80px] left-[-80px] w-[300px] h-[300px] rounded-full bg-white/5" />
+        <div className="absolute bottom-[-60px] right-[-60px] w-[250px] h-[250px] rounded-full bg-white/5" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-white/[0.03]" />
+
+        {/* Logo */}
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="w-9 h-9 bg-white/10 border border-white/20 rounded-xl flex items-center justify-center text-white font-bold text-base">A</div>
+          <span className="text-white/90 font-semibold text-lg">AcadAIsist</span>
+        </div>
+
+        {/* Center quote */}
+        <div className="relative z-10">
+          <div className="text-6xl mb-6">🎓</div>
+          <blockquote className="text-white text-2xl font-bold leading-snug mb-4">
+            "Education is the most powerful weapon which you can use to change the world."
+          </blockquote>
+          <p className="text-blue-300 font-semibold text-sm">— Nelson Mandela</p>
+
+          <div className="mt-10 grid grid-cols-2 gap-4">
+            <div className="bg-white/10 border border-white/10 rounded-2xl p-4">
+              <p className="text-3xl font-bold text-white">2×</p>
+              <p className="text-blue-200 text-sm mt-1">Faster grading than manual evaluation</p>
             </div>
-            <span className="text-white font-bold text-xl">AcadAIsist</span>
+            <div className="bg-white/10 border border-white/10 rounded-2xl p-4">
+              <p className="text-3xl font-bold text-white">100%</p>
+              <p className="text-blue-200 text-sm mt-1">Consistent rubric-based scoring</p>
+            </div>
           </div>
-
-          <h1 className="text-5xl font-bold text-white leading-tight mb-6">
-            AI-Powered<br />Academic<br />Evaluation
-          </h1>
-          <p className="text-slate-400 text-lg leading-relaxed max-w-sm">
-            Reducing faculty workload without compromising academic rigour — powered by Small Language Models.
-          </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          {[
-            { label: "AI Grading", icon: "⚡", desc: "Instant objective scoring" },
-            { label: "SLM Powered", icon: "🧠", desc: "Small language models" },
-            { label: "2× Faster", icon: "🚀", desc: "Than manual evaluation" },
-            { label: "Fair Scoring", icon: "⚖️", desc: "Consistent rubric-based" },
-          ].map((f) => (
-            <div key={f.label} className="bg-slate-800 rounded-2xl p-4 border border-slate-700">
-              <div className="text-2xl mb-2">{f.icon}</div>
-              <p className="text-white font-semibold text-sm">{f.label}</p>
-              <p className="text-slate-400 text-xs mt-1">{f.desc}</p>
-            </div>
-          ))}
-        </div>
+        {/* Bottom */}
+        <p className="relative z-10 text-white/30 text-xs">© 2026 AcadAIsist</p>
       </div>
 
-      {/* RIGHT PANEL */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center bg-slate-50 px-8">
+      {/* RIGHT — login form */}
+      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-slate-50">
         <div className="w-full max-w-md">
 
-          {/* MOBILE LOGO */}
-          <div className="flex items-center gap-3 mb-8 lg:hidden">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
-              <GraduationCap size={22} className="text-white" />
-            </div>
-            <span className="text-slate-900 font-bold text-xl">AcadAIsist</span>
+          {/* Mobile logo */}
+          <div className="flex items-center gap-2 mb-10 lg:hidden">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">A</div>
+            <span className="font-bold text-slate-900 text-lg">AcadAIsist</span>
           </div>
 
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-slate-900 mb-2">Welcome back</h2>
-            <p className="text-slate-500">Sign in to your account to continue</p>
-          </div>
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-10">
 
-          <form onSubmit={loginUser} className="space-y-5">
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input
-                  type="email"
-                  placeholder="Enter your email"
-                  className="w-full border border-slate-200 bg-white py-3.5 pl-11 pr-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 placeholder:text-slate-400 shadow-sm"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
+            <div className="mb-8">
+              <h2 className="text-3xl font-bold text-slate-900 mb-1">Welcome back</h2>
+              <p className="text-slate-500 text-sm">Sign in to continue to your dashboard</p>
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
-                  className="w-full border border-slate-200 bg-white py-3.5 pl-11 pr-11 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 placeholder:text-slate-400 shadow-sm"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+            <form onSubmit={loginUser} className="space-y-5">
+
+              {/* EMAIL */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Email Address</label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
+                  <input
+                    type="email"
+                    placeholder="Enter your email"
+                    className="w-full border border-slate-200 bg-slate-50 py-3.5 pl-11 pr-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-slate-900 placeholder:text-slate-400 transition"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
               </div>
-            </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white py-3.5 rounded-xl text-base font-semibold shadow-md transition-all duration-150 mt-2 disabled:opacity-60"
-            >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                  </svg>
-                  Signing In...
-                </span>
-              ) : "Sign In"}
-            </button>
+              {/* PASSWORD */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    className="w-full border border-slate-200 bg-slate-50 py-3.5 pl-11 pr-11 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-slate-900 placeholder:text-slate-400 transition"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
+                  >
+                    {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                  </button>
+                </div>
+              </div>
 
-            <p className="text-center text-slate-500 text-sm pt-2">
+              {/* SIGN IN */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white py-3.5 rounded-xl text-base font-semibold shadow-md hover:shadow-lg transition-all duration-150 disabled:opacity-60 mt-2"
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Signing In...
+                  </span>
+                ) : "Sign In"}
+              </button>
+
+            </form>
+
+            <p className="text-center text-slate-500 text-sm mt-6">
               New student?{" "}
               <span
                 onClick={() => router.push("/student/register")}
@@ -168,13 +174,16 @@ export default function LoginPage() {
               </span>
             </p>
 
-          </form>
-
-          <div className="mt-10 pt-6 border-t border-slate-200">
-            <p className="text-xs text-slate-400 text-center leading-relaxed">
-              A Small Language Model Based Lightweight and Accessible Evaluation Tool for Reducing Faculty Workload Without Compromising Academic Rigour
-            </p>
           </div>
+
+          <p className="text-center mt-5">
+            <span
+              onClick={() => router.push("/")}
+              className="text-slate-400 text-xs cursor-pointer hover:text-slate-600 transition"
+            >
+              ← Back to home
+            </span>
+          </p>
 
         </div>
       </div>
