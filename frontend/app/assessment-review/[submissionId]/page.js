@@ -9,6 +9,7 @@ export default function AssessmentReviewPage() {
     const router = useRouter();
     const params = useParams();
     const submissionId = params.submissionId;
+    const [selectedFeedback, setSelectedFeedback] = useState(null);
 
     const [questions, setQuestions] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -159,40 +160,16 @@ export default function AssessmentReviewPage() {
                                             <div className="flex gap-6 text-sm text-slate-500 mb-2">
                                                 <span>Words: {wordCount}</span>
                                                 <span>Characters: {q.student_answer?.length || 0}</span>
+                                                {expectedLimit > 0 && (
+                                                    <span>Expected Words: {expectedLimit}</span>
+                                                )}
                                             </div>
-                                            {expectedLimit > 0 && (
-                                                <div className={`flex items-center gap-3 px-4 py-2 rounded-xl border text-sm font-semibold ${isOver ? "bg-red-50 border-red-200 text-red-700" : "bg-green-50 border-green-200 text-green-700"}`}>
-                                                    <span>{isOver ? "⚠️ Word Limit Exceeded" : "✓ Within Word Limit"}</span>
-                                                    <span className="ml-auto flex gap-4">
-                                                        <span>Student wrote: <strong>{wordCount} words</strong></span>
-                                                        <span>|</span>
-                                                        <span>Expected: <strong>{expectedLimit} words</strong></span>
-                                                        {isOver && <><span>|</span><span>Exceeded by: <strong>{wordCount - expectedLimit} words</strong></span></>}
-                                                    </span>
-                                                </div>
-                                            )}
+
                                         </div>
                                     );
                                 })()}
 
-                                {/* RUBRIC FEEDBACK */}
-                                {q.feedback?.length > 0 && (
-                                    <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
-                                        <h3 className="font-semibold text-slate-700 mb-2">
-                                            Rubric Feedback
-                                        </h3>
-                                        <ul className="space-y-1">
-                                            {q.feedback.map((item, idx) => (
-                                                <li
-                                                    key={idx}
-                                                    className={item.startsWith("✓") ? "text-green-700" : "text-red-600"}
-                                                >
-                                                    {item}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
+                                
                             </div>
 
                             {/* MARKS SECTION */}
@@ -202,11 +179,10 @@ export default function AssessmentReviewPage() {
                                     {/* AI MARKS */}
                                     <div className="flex items-center gap-2">
                                         <span className="font-semibold text-slate-700 text-sm">AI Marks</span>
-                                        <span className={`px-4 py-2 rounded-lg font-bold ${
-                                            isEvaluated(q)
-                                                ? "bg-green-100 text-green-700"
-                                                : "bg-yellow-100 text-yellow-700"
-                                        }`}>
+                                        <span className={`px-4 py-2 rounded-lg font-bold ${isEvaluated(q)
+                                            ? "bg-green-100 text-green-700"
+                                            : "bg-yellow-100 text-yellow-700"
+                                            }`}>
                                             {isEvaluated(q) ? q.ai_marks : "Evaluation Pending"}
                                         </span>
                                         {isEvaluated(q) && (
@@ -232,11 +208,10 @@ export default function AssessmentReviewPage() {
                                             onClick={() =>
                                                 setEditingMarks({ ...editingMarks, [q.question_id]: true })
                                             }
-                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition ml-2 text-white ${
-                                                !isEvaluated(q)
-                                                    ? "bg-slate-300 cursor-not-allowed"
-                                                    : "bg-sky-600 hover:bg-sky-700"
-                                            }`}
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition ml-2 text-white ${!isEvaluated(q)
+                                                ? "bg-slate-300 cursor-not-allowed"
+                                                : "bg-sky-600 hover:bg-sky-700"
+                                                }`}
                                         >
                                             {hasFacultyEdit(q) ? "Edit Marks" : "Edit Marks"}
                                         </button>
@@ -280,6 +255,16 @@ export default function AssessmentReviewPage() {
                                         </div>
                                     )}
 
+                                    {/* FEEDBACK BUTTON - RIGHT CORNER */}
+                                    {q.feedback?.length > 0 && (
+                                        <button
+                                            onClick={() => setSelectedFeedback(q.feedback)}
+                                            className="ml-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+                                        >
+                                            Feedback ({q.feedback.length})
+                                        </button>
+                                    )}
+
                                 </div>
                             </div>
 
@@ -303,6 +288,56 @@ export default function AssessmentReviewPage() {
                             </button>
                         </div>
                     </div>
+
+                    {/* FEEDBACK MODAL */}
+                    {selectedFeedback && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                            <div className="bg-white rounded-2xl shadow-2xl w-[90%] max-w-3xl max-h-[80vh] flex flex-col">
+
+                                {/* Header */}
+                                <div className="flex justify-between items-center border-b px-6 py-4">
+                                    <h2 className="text-xl font-bold text-slate-900">
+                                        Rubric Feedback
+                                    </h2>
+
+                                    <button
+                                        onClick={() => setSelectedFeedback(null)}
+                                        className="text-slate-500 hover:text-slate-800 text-2xl font-bold"
+                                    >
+                                        ×
+                                    </button>
+                                </div>
+
+                                {/* Body */}
+                                <div className="overflow-y-auto p-6">
+                                    <ul className="space-y-3">
+                                        {selectedFeedback.map((item, idx) => (
+                                            <li
+                                                key={idx}
+                                                className={`text-base ${item.startsWith("✓")
+                                                    ? "text-green-700"
+                                                    : "text-red-600"
+                                                    }`}
+                                            >
+                                                {item}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                {/* Footer */}
+                                <div className="border-t p-4 flex justify-end">
+                                    <button
+                                        onClick={() => setSelectedFeedback(null)}
+                                        className="bg-slate-800 hover:bg-slate-900 text-white px-5 py-2 rounded-lg"
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+
+                            </div>
+                        </div>
+                    )}
                 </>
             )}
 
