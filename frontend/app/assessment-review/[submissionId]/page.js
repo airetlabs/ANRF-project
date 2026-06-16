@@ -229,13 +229,14 @@ export default function AssessmentReviewPage() {
                            
 {!editingMarks[q.question_id] ? (
     <button
-        disabled={!q.ai_marks || q.ai_marks === 0}
-        onClick={() => setEditingMarks({ ...editingMarks, [q.question_id]: true })}
-        className={`px-4 py-2 rounded-lg text-sm font-medium transition ml-2 text-white ${
-            !q.ai_marks || q.ai_marks === 0
-                ? "bg-slate-300 cursor-not-allowed"
-                : "bg-sky-600 hover:bg-sky-700"
-        }`}
+    
+disabled={q.ai_marks === null || q.ai_marks === undefined}
+onClick={() => setEditingMarks({ ...editingMarks, [q.question_id]: true })}
+className={`px-4 py-2 rounded-lg text-sm font-medium transition ml-2 text-white ${
+    q.ai_marks === null || q.ai_marks === undefined
+        ? "bg-slate-300 cursor-not-allowed"
+        : "bg-sky-600 hover:bg-sky-700"
+}`}
     >
         Edit Marks
     </button>
