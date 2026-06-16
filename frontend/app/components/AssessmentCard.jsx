@@ -25,13 +25,12 @@ export default function AssessmentCard({
 
   const router = useRouter();
 
-  // Determine status: Published but past availableTo = Live Expired
   const now = new Date();
   const availableTo = assessment.availableTo ? new Date(assessment.availableTo) : null;
   const isPublished = assessment.status === "Published";
   const isExpired = isPublished && availableTo && now > availableTo;
 
-  const statusLabel = isExpired ? "Live Expired" : assessment.status;
+  const statusLabel = isExpired ? "Expired" : isPublished ? "Live" : "Draft";
   const statusColors = isExpired
     ? "bg-red-100 text-red-700"
     : isPublished
@@ -120,12 +119,10 @@ export default function AssessmentCard({
           </span>
         </div>
 
-        {/* TITLE */}
         <h2 className="text-2xl font-bold text-slate-900 leading-snug mb-4">
           {assessment.title}
         </h2>
 
-        {/* METADATA */}
         <div className="space-y-2">
           <div className="flex justify-between items-center text-sm">
             <p className="text-slate-500">Questions</p>
