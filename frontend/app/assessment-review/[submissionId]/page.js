@@ -146,19 +146,30 @@ export default function AssessmentReviewPage() {
                                     {q.student_answer || "No answer provided"}
                                 </p>
 
-                                <div className="mt-3 flex gap-6 text-sm text-slate-500">
-                                    <span>
-                                        Words: {
-                                            q.student_answer
-                                                ? q.student_answer.trim().split(/\s+/).filter(Boolean).length
-                                                : 0
-                                        }
-                                    </span>
-
-                                    <span>
-                                        Characters: {q.student_answer?.length || 0}
-                                    </span>
-                                </div>
+                               {(() => {
+    const wordCount = q.student_answer ? q.student_answer.trim().split(/\s+/).filter(Boolean).length : 0;
+    const expectedLimit = Number(q.ans_length) || 0;
+    const isOver = expectedLimit > 0 && wordCount > expectedLimit;
+    return (
+        <div className="mt-3">
+            <div className="flex gap-6 text-sm text-slate-500 mb-2">
+                <span>Words: {wordCount}</span>
+                <span>Characters: {q.student_answer?.length || 0}</span>
+            </div>
+            {expectedLimit > 0 && (
+                <div className={`flex items-center gap-3 px-4 py-2 rounded-xl border text-sm font-semibold ${isOver ? "bg-red-50 border-red-200 text-red-700" : "bg-green-50 border-green-200 text-green-700"}`}>
+                    <span>{isOver ? "⚠️ Word Limit Exceeded" : "✓ Within Word Limit"}</span>
+                    <span className="ml-auto flex gap-4">
+                        <span>Student wrote: <strong>{wordCount} words</strong></span>
+                        <span>|</span>
+                        <span>Expected: <strong>{expectedLimit} words</strong></span>
+                        {isOver && <><span>|</span><span>Exceeded by: <strong>{wordCount - expectedLimit} words</strong></span></>}
+                    </span>
+                </div>
+            )}
+        </div>
+    );
+})()}
 
                                 {/* RUBRIC FEEDBACK */}
                                 {q.feedback?.length > 0 && (
