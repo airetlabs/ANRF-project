@@ -57,7 +57,7 @@ export default function AssessmentReviewPage() {
             }
             alert("Evaluation Finalized Successfully");
             localStorage.setItem("openSubmissions", "true");
-            router.push("/");
+            router.push("/faculty/dashboard");
         } catch (error) {
             console.error(error);
             alert("Error Saving Evaluation");
@@ -145,6 +145,44 @@ export default function AssessmentReviewPage() {
                                 <p className="text-slate-800 leading-8 whitespace-pre-wrap">
                                     {q.student_answer || "No answer provided"}
                                 </p>
+
+                                <div className="mt-3 flex gap-6 text-sm text-slate-500">
+                                    <span>
+                                        Words: {
+                                            q.student_answer
+                                                ? q.student_answer.trim().split(/\s+/).filter(Boolean).length
+                                                : 0
+                                        }
+                                    </span>
+
+                                    <span>
+                                        Characters: {q.student_answer?.length || 0}
+                                    </span>
+                                </div>
+
+                                {/* RUBRIC FEEDBACK */}
+                                {q.feedback?.length > 0 && (
+                                    <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                                        <h3 className="font-semibold text-slate-700 mb-2">
+                                            Rubric Feedback
+                                        </h3>
+
+                                        <ul className="space-y-1">
+                                            {q.feedback.map((item, idx) => (
+                                                <li
+                                                    key={idx}
+                                                    className={
+                                                        item.startsWith("✓")
+                                                            ? "text-green-700"
+                                                            : "text-red-600"
+                                                    }
+                                                >
+                                                    {item}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
                             </div>
 
                             {/* MARKS SECTION */}
