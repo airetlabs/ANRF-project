@@ -134,9 +134,9 @@ export default function AdminDashboard() {
   };
 
   const tabs = [
-    { id: "faculty", label: "Faculty Management", emoji: "?????" },
-    { id: "assessments", label: "All Assessments", emoji: "??" },
-    { id: "submissions", label: "All Submissions", emoji: "??" },
+{ id: "faculty", label: "Faculty Management", emoji: "👨‍🏫" },
+{ id: "assessments", label: "All Assessments", emoji: "📋" },
+{ id: "submissions", label: "All Submissions", emoji: "📝" },
   ];
 
   return (
