@@ -120,7 +120,7 @@ export default function AssessmentReviewPage() {
                             {/* QUESTION HEADER */}
                             <div className="flex justify-between items-center border-b border-slate-100 pb-4 mb-5">
                                 <h2 className="text-xl font-bold text-slate-900">
-                                    Question {q.question_id}
+                                    Question {String(q.question_id).includes("_") ? String(q.question_id).split("_").pop() : q.question_id}
                                 </h2>
                                 <div className="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold">
                                     Max Marks: {q.max_marks}
