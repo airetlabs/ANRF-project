@@ -319,6 +319,7 @@ def evaluate_submission(submission_id: str):
     except Exception as e:
         logger.error(f"Evaluation failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+    
 # SAVE FACULTY CORRECTION
 @router.post("/save-correction")
 def save_correction(data: dict):
@@ -352,3 +353,122 @@ def save_correction(data: dict):
     )
 
     return {"message": "Marks Saved Successfully"}
+
+@router.get("/result/{student_email}")
+def get_student_results(student_email: str):
+
+    submissions = list(
+        db.StudentSubmission.find(
+            {"student_email": student_email}
+        )
+    )
+
+    result = []
+
+    for submission in submissions:
+
+        assessment = db.Assessment.find_one(
+            {"_id": ObjectId(submission["assessment_id"])}
+        )
+
+        result.append({
+            "submission_id": str(submission["_id"]),
+            "assessment_id": submission["assessment_id"],
+            "assessment_title": assessment["title"] if assessment else "Unknown",
+            "status": submission.get("status", "Pending Evaluation"),
+            "final_marks": submission.get("final_marks", 0),
+            "submitted_at": submission.get("submitted_at")
+        })
+
+    return result
+
+@router.get("/student-result/{submission_id}")
+def student_result(submission_id: str):
+
+    submission = db.StudentSubmission.find_one(
+        {"_id": ObjectId(submission_id)}
+    )
+
+    if not submission:
+        raise HTTPException(status_code=404, detail="Submission not found")
+
+    assessment = db.Assessment.find_one(
+        {"_id": ObjectId(submission["assessment_id"])}
+    )
+
+    questions = list(
+        db.Question.find({"assessment_id": submission["assessment_id"]})
+    )
+
+    result = []
+
+    total_marks = 0
+
+    for question in questions:
+
+        answer = db.StudentAnswer.find_one(
+            {
+                "student_id": submission["student_id"],
+                "assessment_id": submission["assessment_id"],
+                "question_id": question["question_id"]
+            }
+        )
+
+        correction = db.FacultyCorrection.find_one(
+            {
+                "submission_id": submission_id,
+                "question_id": question["question_id"]
+            }
+        )
+
+        evaluation = db.EvaluationResult.find_one(
+            {
+                "student_id": submission["student_id"],
+                "assessment_id": submission["assessment_id"],
+                "question_id": question["question_id"]
+            }
+        )
+
+        marks = (
+            correction.get("faculty_marks", 0)
+            if correction
+            else evaluation.get("suggested_marks", 0)
+            if evaluation
+            else 0
+        )
+
+        total_marks += float(marks)
+
+        feedback = []
+
+        if evaluation:
+            breakdown = evaluation.get(
+                "technical_score_breakdown",
+                {}
+            )
+
+            for point, value in breakdown.items():
+
+                value = str(value).lower()
+
+                if "matched" in value and "not matched" not in value:
+                    feedback.append(f"✓ {point} present")
+
+                elif "not matched" in value:
+                    feedback.append(f"✗ {point} missing")
+
+        result.append({
+            "question_id": question["question_id"],
+            "question": question.get("question_text", ""),
+            "student_answer": answer["answer_text"] if answer else "",
+            "marks": marks,
+            "max_marks": question.get("max_marks", 0),
+            "feedback": feedback
+        })
+
+    return {
+        "assessment_title": assessment["title"] if assessment else "Assessment",
+        "status": submission.get("status"),
+        "total_marks": round(total_marks),
+        "questions": result
+    }

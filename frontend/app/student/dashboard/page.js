@@ -10,6 +10,7 @@ export default function StudentDashboard() {
 
   const [assessments, setAssessments] = useState([]);
   const [submittedIds, setSubmittedIds] = useState([]);
+  const [submissionMap, setSubmissionMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [studentEmail, setStudentEmail] = useState("");
 
@@ -58,10 +59,27 @@ export default function StudentDashboard() {
         `${API_URL}/submission/student/${email}`
       );
       const submissionData = await submissionResponse.json();
+
+      
+
       const submittedAssessmentIds = submissionData.map(
         (submission) => submission.assessment_id
       );
+
       setSubmittedIds(submittedAssessmentIds);
+
+      const map = {};
+
+      submissionData.forEach((submission) => {
+        map[submission.assessment_id] = {
+          submissionId: submission._id,
+          status: submission.status,
+          finalMarks: submission.final_marks
+        };
+      });
+
+      setSubmissionMap(map);
+      
 
     } catch (error) {
       console.error(error);
@@ -155,6 +173,7 @@ export default function StudentDashboard() {
             {assessments.map((assessment) => {
 
               const isSubmitted = submittedIds.includes(assessment._id);
+              const submissionInfo = submissionMap[assessment._id];
 
               const now = new Date();
               const start = new Date(assessment.availableFrom);
@@ -209,19 +228,39 @@ export default function StudentDashboard() {
 
                   {/* BUTTON */}
                   {isSubmitted ? (
-                    <button
-                      disabled
-                      className="w-full bg-green-600 text-white py-3 rounded-2xl font-semibold cursor-not-allowed opacity-80"
-                    >
-                      ✓ Submitted
-                    </button>
+
+                    submissionInfo?.status === "Finalized" ? (
+
+                      <button
+                        onClick={() =>
+                          router.push(
+                            `/student/result/${submissionInfo.submissionId}`
+                          )
+                        }
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl font-semibold transition"
+                      >
+                        View Result
+                      </button>
+
+                    ) : (
+
+                      <button
+                        disabled
+                        className="w-full bg-green-600 text-white py-3 rounded-2xl font-semibold cursor-not-allowed opacity-80"
+                      >
+                        ✓ Submitted
+                      </button>
+
+                    )
+
                   ) : (
                     <button
+                    
                       onClick={() => router.push(`/student/assessment/${assessment._id}`)}
                       disabled={assessmentStatus === "Expired"}
                       className={`w-full py-3 rounded-2xl font-semibold transition ${assessmentStatus === "Expired"
-                          ? "bg-gray-400 text-white cursor-not-allowed"
-                          : "bg-slate-900 hover:bg-slate-700 text-white"
+                        ? "bg-gray-400 text-white cursor-not-allowed"
+                        : "bg-slate-900 hover:bg-slate-700 text-white"
                         }`}
                     >
                       {assessmentStatus === "Expired"
