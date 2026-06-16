@@ -110,7 +110,7 @@ def get_student_assessments(department: str, year: str):
         if (
             department in departments
             and year in years_str
-            and start_time <= current_time_ist <= end_time
+            and start_time <= current_time_ist
         ):
             assessment["_id"] = str(assessment["_id"])
             filtered_assessments.append(assessment)
