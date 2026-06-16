@@ -16,7 +16,7 @@ def resolve_student_id(student_email: str, student_id_from_client: str | None = 
     if not user:
         raise HTTPException(status_code=404, detail="Student not found")
 
-    register_number = (user.get("register_number") or "").strip()
+    register_number = (user.get("register_number") or "").strip().upper()
     if not register_number:
         raise HTTPException(
             status_code=400,
@@ -24,7 +24,7 @@ def resolve_student_id(student_email: str, student_id_from_client: str | None = 
         )
 
     if student_id_from_client is not None:
-        client_id = str(student_id_from_client).strip()
+        client_id = str(student_id_from_client).strip().upper()
         if client_id and client_id != register_number:
             raise HTTPException(
                 status_code=400,
