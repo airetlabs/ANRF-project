@@ -861,25 +861,23 @@ useEffect(() => {
                                                             {submission.final_marks > 0 ? Math.round(submission.final_marks) : "-"}
                                                         </td>
 
-                                                        <td className="p-4">
-                                                            <button
-                                                                onClick={() => {
-
-                                                                    localStorage.setItem(
-                                                                        "selectedAssessmentId",
-                                                                        selectedAssessmentId
-                                                                    );
-
-                                                                    router.push(
-                                                                        `/assessment-review/${submission.submission_id}`
-                                                                    );
-
-                                                                }}
-                                                                className="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg"
-                                                            >
-                                                                View
-                                                            </button>
-                                                        </td>
+                                                   
+<td className="p-4">
+    <button
+        onClick={() => {
+            if (submission.status !== "Evaluated" && submission.status !== "Finalized") {
+                toast("⚠️ Evaluation not yet done. AI marks will show as pending.", {
+                    duration: 3000,
+                });
+            }
+            localStorage.setItem("selectedAssessmentId", selectedAssessmentId);
+            router.push(`/assessment-review/${submission.submission_id}`);
+        }}
+        className="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg"
+    >
+        View
+    </button>
+</td>
 
                                                         <td className="p-4">
                                                             <button

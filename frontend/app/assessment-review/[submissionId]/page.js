@@ -203,9 +203,14 @@ export default function AssessmentReviewPage() {
                                     {/* AI MARKS */}
                                     <div className="flex items-center gap-2">
                                         <span className="font-semibold text-slate-700 text-sm">AI Marks</span>
-                                        <span className="bg-green-100 text-green-700 px-4 py-2 rounded-lg font-bold">
-                                            {q.ai_marks ?? 0}
-                                        </span>
+                                    
+<span className={`px-4 py-2 rounded-lg font-bold ${
+    q.ai_marks != null && q.ai_marks > 0
+        ? "bg-green-100 text-green-700"
+        : "bg-yellow-100 text-yellow-700"
+}`}>
+    {q.ai_marks != null && q.ai_marks > 0 ? q.ai_marks : "Evaluation Pending"}
+</span>
                                         <span className="text-slate-400 text-sm">/ {q.max_marks}</span>
                                     </div>
 
@@ -221,18 +226,19 @@ export default function AssessmentReviewPage() {
                                     )}
 
                                     {/* EDIT / SAVE MARKS */}
-                                    {!editingMarks[q.question_id] ? (
-                                        <button
-                                            onClick={() =>
-                                                setEditingMarks({
-                                                    ...editingMarks,
-                                                    [q.question_id]: true
-                                                })
-                                            }
-                                            className="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition ml-2"
-                                        >
-                                            Edit Marks
-                                        </button>
+                           
+{!editingMarks[q.question_id] ? (
+    <button
+        disabled={!q.ai_marks || q.ai_marks === 0}
+        onClick={() => setEditingMarks({ ...editingMarks, [q.question_id]: true })}
+        className={`px-4 py-2 rounded-lg text-sm font-medium transition ml-2 text-white ${
+            !q.ai_marks || q.ai_marks === 0
+                ? "bg-slate-300 cursor-not-allowed"
+                : "bg-sky-600 hover:bg-sky-700"
+        }`}
+    >
+        Edit Marks
+    </button>
                                     ) : (
                                         <div className="flex items-center gap-3 ml-2">
                                             <span className="font-semibold text-slate-700 text-sm">
