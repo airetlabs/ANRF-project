@@ -77,7 +77,7 @@ export default function LoginPage() {
         <div className="text-center mb-6">
           <h1 className="text-4xl font-bold text-slate-900 mb-1">AcadAIsist</h1>
           <p className="text-xs text-slate-400 mb-4">A Small Language Model Based Lightweight and Accessible Evaluation Tool for Reducing Faculty Workload Without Compromising Academic Rigour</p>
-          <div className="flex justify-center mb-3"><svg xmlns="http://www.w3.org/2000/svg" className="w-14 h-14 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /></svg></div>
+          <div className="flex justify-center mb-3 text-slate-400"><Lock size={56} /></div>
           <h2 className="text-2xl font-bold text-slate-900">Welcome Back</h2>
           <p className="text-slate-500 mt-1">Sign in to continue</p>
         </div>
