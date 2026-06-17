@@ -31,6 +31,8 @@ export default function StudentResultPage() {
 
             const data = await res.json();
 
+
+
             setResult(data);
         } catch (error) {
             console.error(error);
@@ -117,6 +119,7 @@ export default function StudentResultPage() {
 
                 {result?.questions?.map((q, index) => (
 
+
                     <div
                         key={index}
                         className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8"
@@ -159,10 +162,13 @@ export default function StudentResultPage() {
 
                             {q.feedback?.length > 0 && (
                                 <button
-                                    onClick={() => setSelectedFeedback(q.feedback)}
+                                    onClick={() => {
+
+                                        setSelectedFeedback(q.technical_score_breakdown);
+                                    }}
                                     className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
                                 >
-                                    Feedback ({q.feedback.length})
+                                    Feedback
                                 </button>
                             )}
 
@@ -177,10 +183,10 @@ export default function StudentResultPage() {
             {selectedFeedback && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
 
-                    <div className="bg-white rounded-2xl shadow-2xl w-[90%] max-w-3xl max-h-[80vh] flex flex-col">
+                    <div className="bg-white rounded-2xl shadow-2xl w-[95%] max-w-5xl max-h-[80vh] flex flex-col">
 
                         <div className="flex justify-between items-center border-b px-6 py-4">
-                            <h2 className="text-xl font-bold">
+                            <h2 className="text-xl font-bold text-black">
                                 Rubric Feedback
                             </h2>
 
@@ -192,21 +198,65 @@ export default function StudentResultPage() {
                             </button>
                         </div>
 
-                        <div className="overflow-y-auto p-6">
-                            <ul className="space-y-3">
-                                {selectedFeedback.map((item, idx) => (
-                                    <li
-                                        key={idx}
-                                        className={
-                                            item.startsWith("✓")
-                                                ? "text-green-700"
-                                                : "text-red-600"
-                                        }
-                                    >
-                                        {item}
-                                    </li>
-                                ))}
-                            </ul>
+                        <div className="overflow-y-auto p-6 text-slate-900">
+
+                            <div className="overflow-x-auto">
+
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full border border-slate-200">
+                                    <thead>
+                                        <tr className="bg-slate-100">
+                                            <th className="border p-3 text-left">
+                                                Rubric Point
+                                            </th>
+                                            <th className="border p-3 text-center">
+                                                Status
+                                            </th>
+                                            <th className="border p-3 text-center">
+                                                Marks
+                                            </th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody>
+                                        {Object.entries(selectedFeedback).map(
+                                            ([point, value], index) => {
+
+                                                const matched =
+                                                    value.includes("(matched)") &&
+                                                    !value.includes("(not matched)");
+
+                                                const marks =
+                                                    value.match(/(\d+(\.\d+)?)(?!.*\d)/)?.[0] || "0";
+
+                                                return (
+                                                    <tr key={index}>
+                                                        <td className="border p-3">
+                                                            {point}
+                                                        </td>
+
+                                                        <td
+                                                            className={`border p-3 text-center font-medium ${matched
+                                                                ? "text-green-600"
+                                                                : "text-red-600"
+                                                                }`}
+                                                        >
+                                                            {matched
+                                                                ? "Matched"
+                                                                : "Unmatched"}
+                                                        </td>
+
+                                                        <td className="border p-3 text-center">
+                                                            {marks}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            }
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
 
                         <div className="border-t p-4 flex justify-end">

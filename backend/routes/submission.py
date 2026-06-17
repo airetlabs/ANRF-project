@@ -463,8 +463,12 @@ def student_result(submission_id: str):
             "student_answer": answer["answer_text"] if answer else "",
             "marks": marks,
             "max_marks": question.get("max_marks", 0),
-            "feedback": feedback
-        })
+            "feedback": feedback,
+
+            "technical_score_breakdown":
+                evaluation.get("technical_score_breakdown", {})
+                if evaluation else {}
+    })
 
     return {
         "assessment_title": assessment["title"] if assessment else "Assessment",
