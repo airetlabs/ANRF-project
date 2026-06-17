@@ -50,7 +50,7 @@ export default function StudentResultPage() {
         );
     }
 
-    
+
 
     if (!result) {
         return (
@@ -61,6 +61,12 @@ export default function StudentResultPage() {
             </div>
         );
     }
+
+    const maxTotalMarks =
+        result?.questions?.reduce(
+            (total, q) => total + (q.max_marks || 0),
+            0
+        ) || 0;
 
     return (
         <div className="min-h-screen bg-slate-100 p-8">
@@ -74,36 +80,35 @@ export default function StudentResultPage() {
                     Back
                 </button>
 
-                <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
-                    <div className="flex justify-between items-center flex-wrap gap-4">
+                <div className="bg-white rounded-3xl shadow-sm border border-slate-200 px-8 py-5">
+
+                    <div className="flex flex-col lg:flex-row justify-between items-start gap-8">
 
                         <div>
-                            <h1 className="text-3xl font-bold text-slate-900">
-                                {result?.assessment_title || "Assessment Result"}
-                            </h1>
-
-                            <p className="text-slate-500 mt-2">
+                            <p className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-2">
                                 Assessment Result
                             </p>
+
+                            <h1 className="text-3xl font-bold text-slate-900">
+                                {result.assessment_title}
+                            </h1>
+
                         </div>
 
-                        <div className="text-right">
-                            <div className="text-sm text-slate-500 mb-1">
-                                Final Marks
+                        <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-center w-[120px] self-start">
+
+                            <p className="text-xs uppercase tracking-wide text-slate-500">
+                                Final Score
+                            </p>
+
+                            <div className="text-2xl font-bold text-green-600 mt-1 leading-none">
+                                {result.total_marks}/{maxTotalMarks}
                             </div>
 
-                            <div className="text-4xl font-bold text-green-600">
-                                {result?.total_marks ?? 0} Marks
-                            </div>
-
-                            <div className="mt-2">
-                                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
-                                    {result.status}
-                                </span>
-                            </div>
                         </div>
 
                     </div>
+
                 </div>
             </div>
 
@@ -120,10 +125,10 @@ export default function StudentResultPage() {
                         {/* QUESTION */}
                         <div className="mb-6">
                             <h2 className="text-xl font-bold text-slate-900 mb-3">
-                                Question {q.question_id}
+                                Question {index + 1}
                             </h2>
 
-                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 font-medium">
                                 {q.question}
                             </div>
                         </div>
@@ -134,7 +139,7 @@ export default function StudentResultPage() {
                                 Your Answer
                             </h3>
 
-                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 whitespace-pre-wrap">
+                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 whitespace-pre-wrap text-slate-800">
                                 {q.student_answer || "No answer submitted"}
                             </div>
                         </div>
@@ -147,7 +152,7 @@ export default function StudentResultPage() {
                                     Marks Obtained
                                 </span>
 
-                                <div className="text-2xl font-bold text-green-600">
+                                <div className="text-xl font-bold text-green-600">
                                     {q.marks} / {q.max_marks}
                                 </div>
                             </div>
