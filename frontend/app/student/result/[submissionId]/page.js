@@ -13,6 +13,7 @@ export default function StudentResultPage() {
 
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [notPublished, setNotPublished] = useState(false);
     const [selectedFeedback, setSelectedFeedback] = useState(null);
 
     const submissionId = params?.submissionId;
@@ -28,10 +29,14 @@ export default function StudentResultPage() {
             const res = await fetch(
                 `${API_URL}/submission/student-result/${params.submissionId}`
             );
-
             const data = await res.json();
 
-
+            // Backend should return results_published status
+            // Check if results are published
+            if (data.results_published === false) {
+                setNotPublished(true);
+                return;
+            }
 
             setResult(data);
         } catch (error) {
@@ -52,14 +57,31 @@ export default function StudentResultPage() {
         );
     }
 
-
+    // RESULTS NOT PUBLISHED YET
+    if (notPublished) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-slate-100">
+                <div className="text-center bg-white rounded-3xl p-12 shadow-sm border border-slate-200 max-w-md">
+                    <div className="text-5xl mb-4">🔒</div>
+                    <h2 className="text-2xl font-bold text-slate-900 mb-3">Results Not Yet Published</h2>
+                    <p className="text-slate-500 mb-6">
+                        Your faculty hasn't published the results yet. Please check back later.
+                    </p>
+                    <button
+                        onClick={() => router.push("/student/dashboard")}
+                        className="bg-slate-800 text-white px-6 py-3 rounded-xl font-medium"
+                    >
+                        Back to Dashboard
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     if (!result) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <h2 className="text-xl font-semibold">
-                    Result not found
-                </h2>
+                <h2 className="text-xl font-semibold">Result not found</h2>
             </div>
         );
     }
@@ -83,78 +105,54 @@ export default function StudentResultPage() {
                 </button>
 
                 <div className="bg-white rounded-3xl shadow-sm border border-slate-200 px-8 py-5">
-
                     <div className="flex flex-col lg:flex-row justify-between items-start gap-8">
-
                         <div>
                             <p className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-2">
                                 Assessment Result
                             </p>
-
                             <h1 className="text-3xl font-bold text-slate-900">
                                 {result.assessment_title}
                             </h1>
-
                         </div>
 
                         <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-center w-[120px] self-start">
-
                             <p className="text-xs uppercase tracking-wide text-slate-500">
                                 Final Score
                             </p>
-
                             <div className="text-2xl font-bold text-green-600 mt-1 leading-none">
                                 {result.total_marks}/{maxTotalMarks}
                             </div>
-
                         </div>
-
                     </div>
-
                 </div>
             </div>
 
             {/* QUESTIONS */}
             <div className="max-w-6xl mx-auto space-y-6">
-
                 {result?.questions?.map((q, index) => (
-
-
                     <div
                         key={index}
                         className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8"
                     >
-
-                        {/* QUESTION */}
                         <div className="mb-6">
                             <h2 className="text-xl font-bold text-slate-900 mb-3">
                                 Question {index + 1}
                             </h2>
-
                             <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 font-medium">
                                 {q.question}
                             </div>
                         </div>
 
-                        {/* ANSWER */}
                         <div className="mb-6">
-                            <h3 className="font-semibold text-slate-700 mb-3">
-                                Your Answer
-                            </h3>
-
+                            <h3 className="font-semibold text-slate-700 mb-3">Your Answer</h3>
                             <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 whitespace-pre-wrap text-slate-800">
                                 {q.student_answer || "No answer submitted"}
                             </div>
                         </div>
 
-                        {/* MARKS */}
                         <div className="flex justify-between items-center flex-wrap gap-4">
-
                             <div>
-                                <span className="text-slate-500">
-                                    Marks Obtained
-                                </span>
-
+                                <span className="text-slate-500">Marks Obtained</span>
                                 <div className="text-xl font-bold text-green-600">
                                     {q.marks} / {q.max_marks}
                                 </div>
@@ -162,98 +160,53 @@ export default function StudentResultPage() {
 
                             {q.feedback?.length > 0 && (
                                 <button
-                                    onClick={() => {
-
-                                        setSelectedFeedback(q.technical_score_breakdown);
-                                    }}
+                                    onClick={() => setSelectedFeedback(q.technical_score_breakdown)}
                                     className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
                                 >
                                     Feedback
                                 </button>
                             )}
-
                         </div>
-
                     </div>
                 ))}
-
             </div>
 
             {/* FEEDBACK MODAL */}
             {selectedFeedback && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-
                     <div className="bg-white rounded-2xl shadow-2xl w-[95%] max-w-5xl max-h-[80vh] flex flex-col">
-
                         <div className="flex justify-between items-center border-b px-6 py-4">
-                            <h2 className="text-xl font-bold text-black">
-                                Rubric Feedback
-                            </h2>
-
-                            <button
-                                onClick={() => setSelectedFeedback(null)}
-                                className="text-2xl"
-                            >
-                                ×
-                            </button>
+                            <h2 className="text-xl font-bold text-black">Rubric Feedback</h2>
+                            <button onClick={() => setSelectedFeedback(null)} className="text-2xl">✕</button>
                         </div>
 
                         <div className="overflow-y-auto p-6 text-slate-900">
-
-                            <div className="overflow-x-auto">
-
-                            </div>
                             <div className="overflow-x-auto">
                                 <table className="w-full border border-slate-200">
                                     <thead>
                                         <tr className="bg-slate-100">
-                                            <th className="border p-3 text-left">
-                                                Rubric Point
-                                            </th>
-                                            <th className="border p-3 text-center">
-                                                Status
-                                            </th>
-                                            <th className="border p-3 text-center">
-                                                Marks
-                                            </th>
+                                            <th className="border p-3 text-left">Rubric Point</th>
+                                            <th className="border p-3 text-center">Status</th>
+                                            <th className="border p-3 text-center">Marks</th>
                                         </tr>
                                     </thead>
-
                                     <tbody>
-                                        {Object.entries(selectedFeedback).map(
-                                            ([point, value], index) => {
-
-                                                const matched =
-                                                    value.includes("(matched)") &&
-                                                    !value.includes("(not matched)");
-
-                                                const marks =
-                                                    value.match(/(\d+(\.\d+)?)(?!.*\d)/)?.[0] || "0";
-
-                                                return (
-                                                    <tr key={index}>
-                                                        <td className="border p-3">
-                                                            {point}
-                                                        </td>
-
-                                                        <td
-                                                            className={`border p-3 text-center font-medium ${matched
-                                                                ? "text-green-600"
-                                                                : "text-red-600"
-                                                                }`}
-                                                        >
-                                                            {matched
-                                                                ? "Matched"
-                                                                : "Unmatched"}
-                                                        </td>
-
-                                                        <td className="border p-3 text-center">
-                                                            {marks}
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            }
-                                        )}
+                                        {Object.entries(selectedFeedback).map(([point, value], index) => {
+                                            const matched =
+                                                value.includes("(matched)") &&
+                                                !value.includes("(not matched)");
+                                            const marks =
+                                                value.match(/(\d+(\.\d+)?)(?!.*\d)/)?.[0] || "0";
+                                            return (
+                                                <tr key={index}>
+                                                    <td className="border p-3">{point}</td>
+                                                    <td className={`border p-3 text-center font-medium ${matched ? "text-green-600" : "text-red-600"}`}>
+                                                        {matched ? "Matched" : "Unmatched"}
+                                                    </td>
+                                                    <td className="border p-3 text-center">{marks}</td>
+                                                </tr>
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                             </div>
@@ -267,9 +220,7 @@ export default function StudentResultPage() {
                                 Close
                             </button>
                         </div>
-
                     </div>
-
                 </div>
             )}
         </div>
