@@ -1,4 +1,5 @@
 import logging
+import json
 
 from fastapi import APIRouter, HTTPException
 from bson import ObjectId
@@ -200,6 +201,7 @@ def view_submission(submission_id: str):
 def review_submission(submission_id: str):
 
     submission = db.StudentSubmission.find_one(
+        
         {"_id": ObjectId(submission_id)}
     )
 
@@ -232,6 +234,17 @@ def review_submission(submission_id: str):
                 "assessment_id": assessment_id
             }
         )
+        
+        labels_json = []
+
+        if evaluation:
+            labels_json = evaluation.get("labels_json", "[]")
+
+            if isinstance(labels_json, str):
+                try:
+                    labels_json = json.loads(labels_json)
+                except:
+                    labels_json = []
 
         correction = db.FacultyCorrection.find_one(
             {
@@ -264,7 +277,8 @@ def review_submission(submission_id: str):
             "student_answer": answer["answer_text"] if answer else "",
             "ai_marks": ai_marks,
             "faculty_marks": final_marks,
-            "feedback": feedback
+            "feedback": feedback,
+            "labels_json": labels_json
         })
 
     return result
@@ -475,6 +489,18 @@ def student_result(submission_id: str):
 
         total_marks += float(marks)
 
+        labels_json = []
+
+        if evaluation:
+            labels_json = evaluation.get("labels_json", "[]")
+
+            if isinstance(labels_json, str):
+                try:
+                    labels_json = json.loads(labels_json)
+                except:
+                    labels_json = []
+
+        
         feedback = []
 
         if evaluation:
@@ -495,11 +521,12 @@ def student_result(submission_id: str):
             "marks": marks,
             "max_marks": question.get("max_marks", 0),
             "feedback": feedback,
+            "labels_json": labels_json,
             "technical_score_breakdown": (
                 evaluation.get("technical_score_breakdown", {})
                 if evaluation else {}
             )
-        })
+    })
 
     return {
         "results_published": True,

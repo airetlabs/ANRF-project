@@ -26,6 +26,7 @@ export default function AssessmentReviewPage() {
                 `${API_URL}/submission/review/${submissionId}`
             );
             const data = await response.json();
+            
             setQuestions(data);
 
             const preFilledMarks = {};
@@ -173,11 +174,10 @@ export default function AssessmentReviewPage() {
 
                                         <div className="flex items-center gap-2">
                                             <span className="font-semibold text-slate-700 text-sm">AI Marks</span>
-                                            <span className={`px-4 py-2 rounded-lg font-bold ${
-                                                evaluated
-                                                    ? "bg-green-100 text-green-700"
-                                                    : "bg-yellow-100 text-yellow-700"
-                                            }`}>
+                                            <span className={`px-4 py-2 rounded-lg font-bold ${evaluated
+                                                ? "bg-green-100 text-green-700"
+                                                : "bg-yellow-100 text-yellow-700"
+                                                }`}>
                                                 {evaluated ? q.ai_marks : "AI Evaluation Pending"}
                                             </span>
                                             {evaluated && (
@@ -202,11 +202,10 @@ export default function AssessmentReviewPage() {
                                                     setEditingMarks({ ...editingMarks, [q.question_id]: true })
                                                 }
                                                 title={!evaluated ? "Evaluate first before editing marks" : "Edit marks"}
-                                                className={`px-4 py-2 rounded-lg text-sm font-medium transition ml-2 text-white ${
-                                                    !evaluated
-                                                        ? "bg-slate-300 cursor-not-allowed opacity-60"
-                                                        : "bg-sky-600 hover:bg-sky-700 cursor-pointer"
-                                                }`}
+                                                className={`px-4 py-2 rounded-lg text-sm font-medium transition ml-2 text-white ${!evaluated
+                                                    ? "bg-slate-300 cursor-not-allowed opacity-60"
+                                                    : "bg-sky-600 hover:bg-sky-700 cursor-pointer"
+                                                    }`}
                                             >
                                                 Edit Marks
                                             </button>
@@ -250,9 +249,9 @@ export default function AssessmentReviewPage() {
                                             </div>
                                         )}
 
-                                        {q.feedback?.length > 0 && (
+                                        {q.labels_json?.length > 0 && (
                                             <button
-                                                onClick={() => setSelectedFeedback(q.feedback)}
+                                                onClick={() => setSelectedFeedback(q.labels_json)}
                                                 className="ml-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
                                             >
                                                 Feedback ({q.feedback.length})
@@ -283,11 +282,10 @@ export default function AssessmentReviewPage() {
                                 onClick={finalizeEvaluation}
                                 disabled={!allEvaluated}
                                 title={!allEvaluated ? "Evaluate all questions before finalizing" : ""}
-                                className={`px-6 py-3 rounded-xl font-semibold transition ${
-                                    allEvaluated
-                                        ? "bg-sky-600 hover:bg-sky-700 cursor-pointer"
-                                        : "bg-slate-600 opacity-50 cursor-not-allowed"
-                                }`}
+                                className={`px-6 py-3 rounded-xl font-semibold transition ${allEvaluated
+                                    ? "bg-sky-600 hover:bg-sky-700 cursor-pointer"
+                                    : "bg-slate-600 opacity-50 cursor-not-allowed"
+                                    }`}
                             >
                                 Finalize Evaluation
                             </button>
@@ -309,18 +307,58 @@ export default function AssessmentReviewPage() {
                                 </div>
 
                                 <div className="overflow-y-auto p-6">
-                                    <ul className="space-y-3">
-                                        {selectedFeedback.map((item, idx) => (
-                                            <li
-                                                key={idx}
-                                                className={`text-base ${
-                                                    item.startsWith("✓") ? "text-green-700" : "text-red-600"
-                                                }`}
-                                            >
-                                                {item}
-                                            </li>
-                                        ))}
-                                    </ul>
+
+                                    <table className="w-full border border-slate-300 text-slate-800">
+
+                                        <thead>
+                                            <tr className="bg-slate-100 text-slate-900">
+                                                <th className="border p-3 text-left">
+                                                    Rubric Statement
+                                                </th>
+
+                                                <th className="border p-3">
+                                                    Status
+                                                </th>
+
+                                                <th className="border p-3">
+                                                    Marks
+                                                </th>
+                                            </tr>
+                                        </thead>
+
+                                        <tbody>
+                                            {selectedFeedback.map((item, idx) => (
+
+                                                <tr key={idx}>
+
+                                                    <td className="border p-3 text-slate-800">
+                                                        {item.faculty_rubric_statement}
+                                                    </td>
+
+                                                    <td className="border p-3 text-center">
+                                                        <span
+                                                            className={`px-3 py-1 rounded-full text-sm font-semibold ${item.label?.toLowerCase() === "matched"
+                                                                    ? "bg-green-100 text-green-700"
+                                                                    : item.label?.toLowerCase() === "contradicting"
+                                                                        ? "bg-red-100 text-red-700"
+                                                                        : "bg-yellow-100 text-yellow-700"
+                                                                }`}
+                                                        >
+                                                            {item.label}
+                                                        </span>
+                                                    </td>
+
+                                                    <td className="border p-3 text-center text-slate-800">
+                                                        {item.total_marks}
+                                                    </td>
+
+                                                </tr>
+
+                                            ))}
+                                        </tbody>
+
+                                    </table>
+
                                 </div>
 
                                 <div className="border-t p-4 flex justify-end">

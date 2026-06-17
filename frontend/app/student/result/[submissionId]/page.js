@@ -92,6 +92,8 @@ export default function StudentResultPage() {
             0
         ) || 0;
 
+    
+
     return (
         <div className="min-h-screen bg-slate-100 p-8">
 
@@ -158,9 +160,12 @@ export default function StudentResultPage() {
                                 </div>
                             </div>
 
-                            {q.feedback?.length > 0 && (
+                            {q.labels_json?.length > 0 && (
                                 <button
-                                    onClick={() => setSelectedFeedback(q.technical_score_breakdown)}
+                                    onClick={() => {
+                                        
+                                        setSelectedFeedback(q.labels_json);
+                                    }}
                                     className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
                                 >
                                     Feedback
@@ -172,7 +177,7 @@ export default function StudentResultPage() {
             </div>
 
             {/* FEEDBACK MODAL */}
-            {selectedFeedback && (
+            {selectedFeedback?.length > 0 && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
                     <div className="bg-white rounded-2xl shadow-2xl w-[95%] max-w-5xl max-h-[80vh] flex flex-col">
                         <div className="flex justify-between items-center border-b px-6 py-4">
@@ -191,22 +196,32 @@ export default function StudentResultPage() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {Object.entries(selectedFeedback).map(([point, value], index) => {
-                                            const matched =
-                                                value.includes("(matched)") &&
-                                                !value.includes("(not matched)");
-                                            const marks =
-                                                value.match(/(\d+(\.\d+)?)(?!.*\d)/)?.[0] || "0";
-                                            return (
-                                                <tr key={index}>
-                                                    <td className="border p-3">{point}</td>
-                                                    <td className={`border p-3 text-center font-medium ${matched ? "text-green-600" : "text-red-600"}`}>
-                                                        {matched ? "Matched" : "Unmatched"}
-                                                    </td>
-                                                    <td className="border p-3 text-center">{marks}</td>
-                                                </tr>
-                                            );
-                                        })}
+                                        {selectedFeedback.map((item, index) => (
+                                            <tr key={index}>
+
+                                                <td className="border p-3 text-slate-800">
+                                                    {item.faculty_rubric_statement}
+                                                </td>
+
+                                                <td className="border p-3 text-center">
+                                                    <span
+                                                        className={`px-3 py-1 rounded-full text-sm font-semibold ${item.label?.toLowerCase() === "matched"
+                                                            ? "bg-green-100 text-green-700"
+                                                            : item.label?.toLowerCase() === "contradicting"
+                                                                ? "bg-red-100 text-red-700"
+                                                                : "bg-yellow-100 text-yellow-700"
+                                                            }`}
+                                                    >
+                                                        {item.label}
+                                                    </span>
+                                                </td>
+
+                                                <td className="border p-3 text-center text-slate-800">
+                                                    {item.total_marks}
+                                                </td>
+
+                                            </tr>
+                                        ))}
                                     </tbody>
                                 </table>
                             </div>
