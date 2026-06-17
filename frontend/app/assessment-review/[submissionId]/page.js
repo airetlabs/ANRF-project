@@ -68,13 +68,10 @@ export default function AssessmentReviewPage() {
         }
     };
 
-    // True only if ALL questions have been evaluated
-    const allEvaluated = questions.length > 0 && questions.every(
-        (q) => q.ai_marks !== null && q.ai_marks !== undefined
-    );
+    // null = not yet evaluated, 0 = evaluated and scored zero (legitimate)
+    const isEvaluated = (q) => q.ai_marks !== null && q.ai_marks !== undefined;
 
-    const isEvaluated = (q) =>
-        q.ai_marks !== null && q.ai_marks !== undefined;
+    const allEvaluated = questions.length > 0 && questions.every(isEvaluated);
 
     const hasFacultyEdit = (q) => {
         const saved = facultyMarks[q.question_id];
@@ -128,7 +125,6 @@ export default function AssessmentReviewPage() {
                                 key={index}
                                 className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6"
                             >
-                                {/* QUESTION HEADER */}
                                 <div className="flex justify-between items-center border-b border-slate-100 pb-4 mb-5">
                                     <h2 className="text-xl font-bold text-slate-900">
                                         Question {String(q.question_id).includes("_") ? String(q.question_id).split("_").pop() : q.question_id}
@@ -138,7 +134,6 @@ export default function AssessmentReviewPage() {
                                     </div>
                                 </div>
 
-                                {/* QUESTION TEXT */}
                                 <div className="mb-5">
                                     <h3 className="font-semibold text-slate-700 mb-2 text-sm uppercase tracking-wide">
                                         Question
@@ -146,7 +141,6 @@ export default function AssessmentReviewPage() {
                                     <p className="text-slate-800 leading-7">{q.question}</p>
                                 </div>
 
-                                {/* STUDENT ANSWER */}
                                 <div className="mb-5 bg-slate-50 rounded-xl p-4 border border-slate-200">
                                     <h3 className="font-semibold text-slate-700 mb-2 text-sm uppercase tracking-wide">
                                         Student Answer
@@ -174,11 +168,9 @@ export default function AssessmentReviewPage() {
                                     })()}
                                 </div>
 
-                                {/* MARKS SECTION */}
                                 <div className="border-t border-slate-100 pt-4">
                                     <div className="flex items-center gap-4 flex-wrap">
 
-                                        {/* AI MARKS */}
                                         <div className="flex items-center gap-2">
                                             <span className="font-semibold text-slate-700 text-sm">AI Marks</span>
                                             <span className={`px-4 py-2 rounded-lg font-bold ${
@@ -193,7 +185,6 @@ export default function AssessmentReviewPage() {
                                             )}
                                         </div>
 
-                                        {/* FACULTY MARKS — show if different from AI marks */}
                                         {hasFacultyEdit(q) && (
                                             <div className="flex items-center gap-2 ml-4">
                                                 <span className="font-semibold text-slate-700 text-sm">Faculty Marks</span>
@@ -204,14 +195,13 @@ export default function AssessmentReviewPage() {
                                             </div>
                                         )}
 
-                                        {/* EDIT MARKS — disabled if not evaluated OR currently evaluating */}
                                         {!editing ? (
                                             <button
                                                 disabled={!evaluated}
                                                 onClick={() =>
                                                     setEditingMarks({ ...editingMarks, [q.question_id]: true })
                                                 }
-                                                title={!evaluated ? "Evaluate first before editing marks" : ""}
+                                                title={!evaluated ? "Evaluate first before editing marks" : "Edit marks"}
                                                 className={`px-4 py-2 rounded-lg text-sm font-medium transition ml-2 text-white ${
                                                     !evaluated
                                                         ? "bg-slate-300 cursor-not-allowed opacity-60"
@@ -260,7 +250,6 @@ export default function AssessmentReviewPage() {
                                             </div>
                                         )}
 
-                                        {/* FEEDBACK BUTTON */}
                                         {q.feedback?.length > 0 && (
                                             <button
                                                 onClick={() => setSelectedFeedback(q.feedback)}
@@ -277,7 +266,6 @@ export default function AssessmentReviewPage() {
                         );
                     })}
 
-                    {/* TOTAL + FINALIZE */}
                     <div className="bg-slate-900 text-white rounded-2xl shadow p-6">
                         <div className="flex justify-between items-center">
                             <div>
@@ -306,15 +294,12 @@ export default function AssessmentReviewPage() {
                         </div>
                     </div>
 
-                    {/* FEEDBACK MODAL */}
                     {selectedFeedback && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
                             <div className="bg-white rounded-2xl shadow-2xl w-[90%] max-w-3xl max-h-[80vh] flex flex-col">
 
                                 <div className="flex justify-between items-center border-b px-6 py-4">
-                                    <h2 className="text-xl font-bold text-slate-900">
-                                        Rubric Feedback
-                                    </h2>
+                                    <h2 className="text-xl font-bold text-slate-900">Rubric Feedback</h2>
                                     <button
                                         onClick={() => setSelectedFeedback(null)}
                                         className="text-slate-500 hover:text-slate-800 text-2xl font-bold"
@@ -329,9 +314,7 @@ export default function AssessmentReviewPage() {
                                             <li
                                                 key={idx}
                                                 className={`text-base ${
-                                                    item.startsWith("✓")
-                                                        ? "text-green-700"
-                                                        : "text-red-600"
+                                                    item.startsWith("✓") ? "text-green-700" : "text-red-600"
                                                 }`}
                                             >
                                                 {item}

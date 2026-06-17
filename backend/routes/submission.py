@@ -240,7 +240,7 @@ def review_submission(submission_id: str):
             }
         )
 
-        ai_marks = evaluation.get("suggested_marks", 0) if evaluation else 0
+        ai_marks = evaluation.get("suggested_marks", 0) if evaluation else None
         final_marks = correction.get("faculty_marks", ai_marks) if correction else ai_marks
         
         feedback = []
