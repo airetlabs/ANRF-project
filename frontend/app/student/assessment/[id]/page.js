@@ -1,6 +1,5 @@
 "use client";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
