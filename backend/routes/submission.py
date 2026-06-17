@@ -282,6 +282,7 @@ def evaluate_submission(submission_id: str):
             raise HTTPException(status_code=404, detail="Submission not found")
 
         assessment_id = submission["assessment_id"]
+        student_id = submission["student_id"]
 
         questions = list(
             db.Question.find({"assessment_id": assessment_id})
@@ -290,12 +291,39 @@ def evaluate_submission(submission_id: str):
         question_ids = [q["question_id"] for q in questions]
 
         logger.info(f"Evaluating submission {submission_id}")
-        logger.info(f"Student ID: {submission['student_id']}")
+        logger.info(f"Student ID: {student_id}")
         logger.info(f"Assessment ID: {assessment_id}")
         logger.info(f"Question IDs: {question_ids}")
 
+        # Pre-set score=0 for unanswered questions before calling pipeline
+        for q in questions:
+            answer = db.StudentAnswer.find_one({
+                "student_id": student_id,
+                "assessment_id": assessment_id,
+                "question_id": q["question_id"]
+            })
+            answer_text = (answer.get("answer_text", "") if answer else "").strip()
+
+            if not answer_text:
+                db.EvaluationResult.update_one(
+                    {
+                        "student_id": student_id,
+                        "question_id": q["question_id"],
+                        "assessment_id": assessment_id
+                    },
+                    {
+                        "$set": {
+                            "suggested_marks": 0,
+                            "technical_score_breakdown": {},
+                            "skipped": True
+                        }
+                    },
+                    upsert=True
+                )
+                logger.info(f"Question {q['question_id']} has no answer — set ai_marks=0")
+
         scores = evaluate_pipeline(
-            submission["student_id"],
+            student_id,
             question_ids,
             assessment_id
         )
