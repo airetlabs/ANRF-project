@@ -15,7 +15,7 @@ import Select from "react-select";
 export default function Home() {
 
     const router = useRouter();
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://anrf-project-production-a47a.up.railway.app";
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://anrf-project-production-a47a.up.railway.app";
     const [checkingAuth, setCheckingAuth] = useState(true);
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [activeSection, setActiveSection] = useState("Dashboard");
@@ -50,7 +50,6 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://anrf-project-product
         }
     ]);
 
-
     const [submissionDetails, setSubmissionDetails] = useState([]);
     const [showSubmissionDetails, setShowSubmissionDetails] = useState(false);
 
@@ -83,28 +82,19 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://anrf-project-product
     };
 
 
-    // AUTH CHECK — must be faculty role
-    // useEffect(() => {
-    //   const token = localStorage.getItem("token");
-    //   const role = localStorage.getItem("userRole");
-    //   if (!token || role !== "faculty") {
-    //     router.push("/login");
-    //   } else {
-    //     setCheckingAuth(false);
-    //   }
-    // }, []);
-useEffect(() => {
-    const timer = setTimeout(() => {
-        const token = localStorage.getItem("token");
-        const role = localStorage.getItem("userRole");
-        if (!token || role !== "faculty") {
-            router.replace("/login");
-        } else {
-            setCheckingAuth(false);
-        }
-    }, 100);
-    return () => clearTimeout(timer);
-}, []);
+    // AUTH CHECK
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            const token = localStorage.getItem("token");
+            const role = localStorage.getItem("userRole");
+            if (!token || role !== "faculty") {
+                router.replace("/login");
+            } else {
+                setCheckingAuth(false);
+            }
+        }, 100);
+        return () => clearTimeout(timer);
+    }, []);
 
 
     // LOAD AUTOSAVE
@@ -134,7 +124,7 @@ useEffect(() => {
     }, []);
 
 
-    // AUTOSAVE — only saves when there is actual content
+    // AUTOSAVE
     useEffect(() => {
         const hasContent = title.trim() || questions.some((q) => q.question?.trim());
         if (!hasContent) return;
@@ -172,47 +162,6 @@ useEffect(() => {
         }
     }, [activeSection]);
 
-    // OPEN SUBMISSIONS PAGE AFTER RETURNING FROM REVIEW
-    useEffect(() => {
-
-        const openSubmissions =
-            localStorage.getItem("openSubmissions");
-
-        const savedAssessmentId =
-            localStorage.getItem(
-                "selectedAssessmentId"
-            );
-
-        if (
-            openSubmissions === "true" &&
-            savedAssessmentId
-        ) {
-
-            setActiveSection(
-                "Submissions"
-            );
-
-            setSelectedAssessmentId(
-                savedAssessmentId
-            );
-
-            fetchSubmissions(
-                savedAssessmentId
-            );
-
-            localStorage.removeItem(
-                "openSubmissions"
-            );
-
-        }
-
-        const handler = (event) => {
-            fetchSubmissions(event.detail);
-        };
-        window.addEventListener("loadSubmissions", handler);
-        return () => window.removeEventListener("loadSubmissions", handler);
-    }, []);
-
 
     // OPEN SUBMISSIONS PAGE AFTER RETURNING FROM REVIEW
     useEffect(() => {
@@ -225,6 +174,12 @@ useEffect(() => {
             fetchSubmissions(savedAssessmentId);
             localStorage.removeItem("openSubmissions");
         }
+
+        const handler = (event) => {
+            fetchSubmissions(event.detail);
+        };
+        window.addEventListener("loadSubmissions", handler);
+        return () => window.removeEventListener("loadSubmissions", handler);
     }, []);
 
 
@@ -261,9 +216,7 @@ useEffect(() => {
 
 
     const evaluateSubmission = async (submissionId) => {
-
         setEvaluatingSubmission(submissionId);
-
         try {
             const response = await fetch(
                 `${API_URL}/submission/evaluate/${submissionId}`,
@@ -277,15 +230,10 @@ useEffect(() => {
             fetchSubmissions(selectedAssessmentId);
         } catch (error) {
             console.error(error);
-
             toast.error("Evaluation Failed");
-
         } finally {
-
             setEvaluatingSubmission(null);
-
         }
-
     };
 
 
@@ -298,7 +246,6 @@ useEffect(() => {
         } catch (error) {
             console.error(error);
             toast.error("Failed to load submission");
-            toast.error("Evaluation Failed");
         } finally {
             setEvaluatingSubmission(null);
         }
@@ -343,7 +290,7 @@ useEffect(() => {
     };
 
 
-    // ADD QUESTION — inserts after current index
+    // ADD QUESTION
     const addQuestionCard = (index) => {
         const newQuestion = {
             question_id: "",
@@ -534,7 +481,22 @@ useEffect(() => {
                             </div>
 
                             <div className="mt-10">
-                                <RecentActivity savedAssessments={savedAssessments} setActiveSection={setActiveSection} setTitle={setTitle} setQuestions={setQuestions} setEditingAssessmentId={setEditingAssessmentId} setSubjectCode={setSubjectCode} setSubjectName={setSubjectName} setExamDate={setExamDate} setDuration={setDuration} setInstructions={setInstructions} setSelectedDepartments={setSelectedDepartments} setSelectedYears={setSelectedYears} setAvailableFrom={setAvailableFrom} setAvailableTo={setAvailableTo} />
+                                <RecentActivity
+                                    savedAssessments={savedAssessments}
+                                    setActiveSection={setActiveSection}
+                                    setTitle={setTitle}
+                                    setQuestions={setQuestions}
+                                    setEditingAssessmentId={setEditingAssessmentId}
+                                    setSubjectCode={setSubjectCode}
+                                    setSubjectName={setSubjectName}
+                                    setExamDate={setExamDate}
+                                    setDuration={setDuration}
+                                    setInstructions={setInstructions}
+                                    setSelectedDepartments={setSelectedDepartments}
+                                    setSelectedYears={setSelectedYears}
+                                    setAvailableFrom={setAvailableFrom}
+                                    setAvailableTo={setAvailableTo}
+                                />
                             </div>
                         </div>
                     )}
@@ -826,13 +788,55 @@ useEffect(() => {
                     {/* SUBMISSIONS */}
                     {activeSection === "Submissions" && (
                         <div>
-                            <div className="mb-8">
-                                <h2 className="text-4xl font-bold text-slate-900 mb-3">Student Submissions</h2>
-                                <p className="text-slate-500 text-lg">
-    Assessment: {savedAssessments.find(a => a._id === selectedAssessmentId)?.title || 
-    savedAssessments.find(a => String(a._id) === String(selectedAssessmentId))?.title || 
-    ""}
-</p>
+
+                            {/* HEADER + PUBLISH RESULTS BUTTON */}
+                            <div className="mb-8 flex items-start justify-between flex-wrap gap-4">
+                                <div>
+                                    <h2 className="text-4xl font-bold text-slate-900 mb-3">Student Submissions</h2>
+                                    <p className="text-slate-500 text-lg">
+                                        Assessment: {
+                                            savedAssessments.find(a => a._id === selectedAssessmentId)?.title ||
+                                            savedAssessments.find(a => String(a._id) === String(selectedAssessmentId))?.title ||
+                                            ""
+                                        }
+                                    </p>
+                                </div>
+
+                                {(() => {
+                                    const currentAssessment = savedAssessments.find(
+                                        a => a._id === selectedAssessmentId || String(a._id) === String(selectedAssessmentId)
+                                    );
+                                    return currentAssessment?.results_published ? (
+                                        <div className="bg-green-100 text-green-700 font-semibold px-5 py-3 rounded-2xl border border-green-200">
+                                            ✓ Results Published
+                                        </div>
+                                    ) : (
+                                        <button
+                                            onClick={async () => {
+                                                const allEvaluated = assessmentSubmissions.every(
+                                                    s => s.status === "Evaluated" || s.status === "Finalized"
+                                                );
+                                                if (!allEvaluated) {
+                                                    toast.error("Please evaluate all submissions before publishing results.");
+                                                    return;
+                                                }
+                                                try {
+                                                    const res = await fetch(`${API_URL}/assessment/publish-results/${selectedAssessmentId}`, {
+                                                        method: "PATCH"
+                                                    });
+                                                    if (!res.ok) throw new Error();
+                                                    toast.success("Results published! Students can now view their results.");
+                                                    fetchAssessments();
+                                                } catch {
+                                                    toast.error("Failed to publish results.");
+                                                }
+                                            }}
+                                            className="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-3 rounded-2xl transition"
+                                        >
+                                            Publish Results
+                                        </button>
+                                    );
+                                })()}
                             </div>
 
                             {loadingSubmissions ? (
@@ -865,23 +869,22 @@ useEffect(() => {
                                                             {submission.final_marks > 0 ? Math.round(submission.final_marks) : "-"}
                                                         </td>
 
-                                                   
-<td className="p-4">
-    <button
-        onClick={() => {
-            if (submission.status !== "Evaluated" && submission.status !== "Finalized") {
-                toast("⚠️ Evaluation not yet done. AI marks will show as pending.", {
-                    duration: 3000,
-                });
-            }
-            localStorage.setItem("selectedAssessmentId", selectedAssessmentId);
-            router.push(`/assessment-review/${submission.submission_id}`);
-        }}
-        className="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg"
-    >
-        View
-    </button>
-</td>
+                                                        <td className="p-4">
+                                                            <button
+                                                                onClick={() => {
+                                                                    if (submission.status !== "Evaluated" && submission.status !== "Finalized") {
+                                                                        toast("⚠️ Evaluation not yet done. AI marks will show as pending.", {
+                                                                            duration: 3000,
+                                                                        });
+                                                                    }
+                                                                    localStorage.setItem("selectedAssessmentId", selectedAssessmentId);
+                                                                    router.push(`/assessment-review/${submission.submission_id}`);
+                                                                }}
+                                                                className="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg"
+                                                            >
+                                                                View
+                                                            </button>
+                                                        </td>
 
                                                         <td className="p-4">
                                                             <button
@@ -890,12 +893,13 @@ useEffect(() => {
                                                                     evaluatingSubmission === submission.submission_id
                                                                 }
                                                                 onClick={() => evaluateSubmission(submission.submission_id)}
-                                                                className={`px-4 py-2 rounded-lg text-white ${(submission.status === "Evaluated" || submission.status === "Finalized")
-                                                                    ? "bg-green-600 cursor-not-allowed"
-                                                                    : evaluatingSubmission === submission.submission_id
-                                                                        ? "bg-blue-400 cursor-not-allowed"
-                                                                        : "bg-blue-600 hover:bg-blue-700"
-                                                                    }`}
+                                                                className={`px-4 py-2 rounded-lg text-white ${
+                                                                    (submission.status === "Evaluated" || submission.status === "Finalized")
+                                                                        ? "bg-green-600 cursor-not-allowed"
+                                                                        : evaluatingSubmission === submission.submission_id
+                                                                            ? "bg-blue-400 cursor-not-allowed"
+                                                                            : "bg-blue-600 hover:bg-blue-700"
+                                                                }`}
                                                             >
                                                                 {evaluatingSubmission === submission.submission_id
                                                                     ? "Evaluating..."
@@ -932,7 +936,3 @@ useEffect(() => {
         </div>
     );
 }
-
-
-
-

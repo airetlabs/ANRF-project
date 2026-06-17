@@ -242,22 +242,17 @@ def review_submission(submission_id: str):
 
         ai_marks = evaluation.get("suggested_marks", 0) if evaluation else None
         final_marks = correction.get("faculty_marks", ai_marks) if correction else ai_marks
-        
+
         feedback = []
 
         if evaluation:
-            breakdown = evaluation.get(
-                "technical_score_breakdown",
-                {}
-            )
+            breakdown = evaluation.get("technical_score_breakdown", {})
 
             for point, value in breakdown.items():
-
                 value = str(value).lower()
 
                 if "matched" in value and "not matched" not in value:
                     feedback.append(f"✓ {point} present")
-
                 elif "not matched" in value:
                     feedback.append(f"✗ {point} missing")
 
@@ -273,6 +268,7 @@ def review_submission(submission_id: str):
         })
 
     return result
+
 
 # EVALUATE SUBMISSION — runs ML pipeline
 @router.post("/evaluate/{submission_id}")
@@ -319,7 +315,8 @@ def evaluate_submission(submission_id: str):
     except Exception as e:
         logger.error(f"Evaluation failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
-    
+
+
 # SAVE FACULTY CORRECTION
 @router.post("/save-correction")
 def save_correction(data: dict):
@@ -354,13 +351,13 @@ def save_correction(data: dict):
 
     return {"message": "Marks Saved Successfully"}
 
+
+# GET RESULT LIST FOR STUDENT DASHBOARD
 @router.get("/result/{student_email}")
 def get_student_results(student_email: str):
 
     submissions = list(
-        db.StudentSubmission.find(
-            {"student_email": student_email}
-        )
+        db.StudentSubmission.find({"student_email": student_email})
     )
 
     result = []
@@ -371,17 +368,23 @@ def get_student_results(student_email: str):
             {"_id": ObjectId(submission["assessment_id"])}
         )
 
+        # Only include results where faculty has published
+        results_published = assessment.get("results_published", False) if assessment else False
+
         result.append({
             "submission_id": str(submission["_id"]),
             "assessment_id": submission["assessment_id"],
             "assessment_title": assessment["title"] if assessment else "Unknown",
             "status": submission.get("status", "Pending Evaluation"),
             "final_marks": submission.get("final_marks", 0),
-            "submitted_at": submission.get("submitted_at")
+            "submitted_at": submission.get("submitted_at"),
+            "results_published": results_published
         })
 
     return result
 
+
+# GET DETAILED RESULT FOR A SINGLE SUBMISSION (student view)
 @router.get("/student-result/{submission_id}")
 def student_result(submission_id: str):
 
@@ -396,12 +399,17 @@ def student_result(submission_id: str):
         {"_id": ObjectId(submission["assessment_id"])}
     )
 
+    # GATE: block access if faculty hasn't published results yet
+    results_published = assessment.get("results_published", False) if assessment else False
+
+    if not results_published:
+        return {"results_published": False}
+
     questions = list(
         db.Question.find({"assessment_id": submission["assessment_id"]})
     )
 
     result = []
-
     total_marks = 0
 
     for question in questions:
@@ -442,18 +450,13 @@ def student_result(submission_id: str):
         feedback = []
 
         if evaluation:
-            breakdown = evaluation.get(
-                "technical_score_breakdown",
-                {}
-            )
+            breakdown = evaluation.get("technical_score_breakdown", {})
 
             for point, value in breakdown.items():
-
                 value = str(value).lower()
 
                 if "matched" in value and "not matched" not in value:
                     feedback.append(f"✓ {point} present")
-
                 elif "not matched" in value:
                     feedback.append(f"✗ {point} missing")
 
@@ -464,13 +467,14 @@ def student_result(submission_id: str):
             "marks": marks,
             "max_marks": question.get("max_marks", 0),
             "feedback": feedback,
-
-            "technical_score_breakdown":
+            "technical_score_breakdown": (
                 evaluation.get("technical_score_breakdown", {})
                 if evaluation else {}
-    })
+            )
+        })
 
     return {
+        "results_published": True,
         "assessment_title": assessment["title"] if assessment else "Assessment",
         "status": submission.get("status"),
         "total_marks": round(total_marks),
