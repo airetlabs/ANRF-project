@@ -1,6 +1,6 @@
 
 "use client";
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://anrf-project-production-a47a.up.railway.app";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -453,7 +453,15 @@ export default function Home() {
                   setTitle={setTitle}
                   setQuestions={setQuestions}
                   setEditingAssessmentId={setEditingAssessmentId}
-                  setSelectedAssessmentId={setSelectedAssessmentId}
+                  setSubjectCode={setSubjectCode}
+                  setSubjectName={setSubjectName}
+                  setExamDate={setExamDate}
+                  setDuration={setDuration}
+                  setInstructions={setInstructions}
+                  setSelectedDepartments={setSelectedDepartments}
+                  setSelectedYears={setSelectedYears}
+                  setAvailableFrom={setAvailableFrom}
+                  setAvailableTo={setAvailableTo}
                 />
               </div>
             </div>
@@ -644,7 +652,7 @@ export default function Home() {
                           title="Delete this question"
                           className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-red-500 hover:text-white text-slate-600 flex items-center justify-center transition font-bold text-lg flex-shrink-0"
                         >
-                          ×
+                          Ã
                         </button>
                       </div>
                     );
@@ -688,7 +696,7 @@ export default function Home() {
                     onClick={() => setDialogOpen(false)}
                     className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 text-xl font-bold transition"
                   >
-                    ×
+                    Ã
                   </button>
                 </div>
 
@@ -904,10 +912,17 @@ export default function Home() {
                             </td>
                             <td className="p-4">
                               <button
-                                onClick={() => {
-                                  localStorage.setItem("selectedAssessmentId", selectedAssessmentId);
-                                  router.push(`/assessment-review/${submission.submission_id}`);
-                                }}
+                          
+onClick={() => {
+    if (submission.status !== "Evaluated" && submission.status !== "Finalized") {
+        toast("Evaluation not yet done. AI marks will show as pending.", {
+            icon: "⚠️",
+            duration: 3000,
+        });
+    }
+    localStorage.setItem("selectedAssessmentId", selectedAssessmentId);
+    router.push(`/assessment-review/${submission.submission_id}`);
+}}
                                 className="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg"
                               >
                                 View
@@ -920,12 +935,13 @@ export default function Home() {
                                   evaluatingSubmission === submission.submission_id
                                 }
                                 onClick={() => evaluateSubmission(submission.submission_id)}
-                                className={`px-4 py-2 rounded-lg text-white ${(submission.status === "Evaluated" || submission.status === "Finalized")
-                                  ? "bg-green-600 cursor-not-allowed"
-                                  : evaluatingSubmission === submission.submission_id
-                                  ? "bg-blue-400 cursor-not-allowed"
-                                  : "bg-blue-600 hover:bg-blue-700"
-                                  }`}
+                                className={`px-4 py-2 rounded-lg text-white ${
+                                  (submission.status === "Evaluated" || submission.status === "Finalized")
+                                    ? "bg-green-600 cursor-not-allowed"
+                                    : evaluatingSubmission === submission.submission_id
+                                    ? "bg-blue-400 cursor-not-allowed"
+                                    : "bg-blue-600 hover:bg-blue-700"
+                                }`}
                               >
                                 {evaluatingSubmission === submission.submission_id
                                   ? "Evaluating..."

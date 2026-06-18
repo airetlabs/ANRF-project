@@ -1,5 +1,5 @@
-"use client";
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+﻿"use client";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://anrf-project-production-a47a.up.railway.app";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -220,3 +220,4 @@ export default function RegisterPage() {
     </div>
   );
 }
+

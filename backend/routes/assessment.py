@@ -31,11 +31,7 @@ def create_assessment(data: dict):
 
     for idx, q in enumerate(data["questions"]):
         qid = idx + 1
-        qid=str(assessment_id)+'_'+str(qid)
-        # qid = q.get("question_id")
-        # if qid == "" or qid is None:
-        #     qid = idx + 1
-        #     qid=str(assessment_id)+'_'+str(qid)
+        qid = str(assessment_id) + '_' + str(qid)
 
         db.Question.insert_one({
             "assessment_id": assessment_id_str,
@@ -43,8 +39,8 @@ def create_assessment(data: dict):
             "question_text": q["question"],
             "max_marks": int(q["marks"]),
             "ans_length": q["expected_length"],
-            "generated_rubrics":False,
-            "generated_tech_words":False
+            "generated_rubrics": False,
+            "generated_tech_words": False
         })
         db.AnswerKey.insert_one({
             "question_id": qid,
@@ -82,7 +78,7 @@ def get_all_assessments(faculty_email: str):
 @router.get("/student/{department}/{year}")
 def get_student_assessments(department: str, year: str):
 
-    current_time_ist = datetime.now(IST).replace(tzinfo=None)  # naive IST datetime
+    current_time_ist = datetime.now(IST).replace(tzinfo=None)
 
     assessments = list(db.Assessment.find({"status": "Published"}))
 
@@ -104,13 +100,12 @@ def get_student_assessments(department: str, year: str):
         except:
             continue
 
-        # Normalize years to strings so "2" matches both 2 and "2" in DB
         years_str = [str(y) for y in years]
 
         if (
             department in departments
             and year in years_str
-            and start_time <= current_time_ist <= end_time
+            and start_time <= current_time_ist
         ):
             assessment["_id"] = str(assessment["_id"])
             filtered_assessments.append(assessment)
@@ -177,3 +172,18 @@ def get_all_assessments_admin():
     for a in assessments:
         a["_id"] = str(a["_id"])
     return assessments
+
+
+# PUBLISH RESULTS — faculty triggers this after evaluating all submissions
+@router.patch("/publish-results/{assessment_id}")
+def publish_results(assessment_id: str):
+
+    result = db.Assessment.update_one(
+        {"_id": ObjectId(assessment_id)},
+        {"$set": {"results_published": True}}
+    )
+
+    if result.matched_count == 0:
+        return {"message": "Assessment not found"}
+
+    return {"message": "Results published successfully"}

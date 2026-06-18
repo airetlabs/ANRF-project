@@ -1,6 +1,12 @@
 "use client";
+<<<<<<< HEAD
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 import { useEffect, useState } from "react";
+=======
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://anrf-project-production-a47a.up.railway.app";
+
+import { useEffect, useState, useRef } from "react";
+>>>>>>> origin/main-branch
 import { useParams, useRouter } from "next/navigation";
 
 export default function StudentAssessmentPage() {
@@ -17,12 +23,15 @@ export default function StudentAssessmentPage() {
   const [assessmentStatus, setAssessmentStatus] = useState("");
   const [timeLeft, setTimeLeft] = useState(null);
 
+  // Keep a ref to answers so auto-submit always has the latest values
+  const answersRef = useRef({});
+  const submittingRef = useRef(false);
+
   const formatTime = (ms) => {
     const totalSeconds = Math.floor(ms / 1000);
     const hrs = Math.floor(totalSeconds / 3600);
     const mins = Math.floor((totalSeconds % 3600) / 60);
     const secs = totalSeconds % 60;
-
     return `${String(hrs).padStart(2, "0")}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
   };
 
@@ -32,6 +41,11 @@ export default function StudentAssessmentPage() {
     }
   }, [params.id]);
 
+  // Keep answersRef in sync with answers state
+  useEffect(() => {
+    answersRef.current = answers;
+  }, [answers]);
+
   useEffect(() => {
     if (!assessment?.duration) return;
 
@@ -40,15 +54,11 @@ export default function StudentAssessmentPage() {
     );
 
     let startTime;
-
     if (savedStartTime) {
       startTime = Number(savedStartTime);
     } else {
       startTime = Date.now();
-      localStorage.setItem(
-        `assessment_start_${assessment._id}`,
-        startTime
-      );
+      localStorage.setItem(`assessment_start_${assessment._id}`, startTime);
     }
 
     const durationMs = assessment.duration * 60 * 1000;
@@ -61,9 +71,9 @@ export default function StudentAssessmentPage() {
         clearInterval(timer);
         setTimeLeft(0);
 
-        if (!submitting) {
-          alert("Time is up. Assessment will be submitted.");
-          submitAssessment();
+        if (!submittingRef.current) {
+          // Auto-submit directly — no popup
+          doSubmit(answersRef.current, true);
         }
       } else {
         setTimeLeft(remaining);
@@ -71,7 +81,7 @@ export default function StudentAssessmentPage() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [assessment, submitting]);
+  }, [assessment]);
 
   // UNSAVED CHANGES WARNING — browser tab close / refresh
   useEffect(() => {
@@ -95,6 +105,7 @@ export default function StudentAssessmentPage() {
       const data = await assessmentRes.json();
       const questionData = await questionsRes.json();
       setAssessment(data);
+
       const now = new Date();
       const start = new Date(data.availableFrom);
       const end = new Date(data.availableTo);
@@ -106,6 +117,7 @@ export default function StudentAssessmentPage() {
       } else {
         setAssessmentStatus("Live");
       }
+
       setQuestions(Array.isArray(questionData) ? questionData : []);
     } catch (error) {
       console.error(error);
@@ -129,13 +141,13 @@ export default function StudentAssessmentPage() {
     return (text || "").length;
   };
 
-  const submitAssessment = async () => {
+  const doSubmit = async (currentAnswers, isAuto = false) => {
+    if (submittingRef.current) return;
 
-    if (submitting) return;
+    submittingRef.current = true;
+    setSubmitting(true);
 
     try {
-      setSubmitting(true);
-
       const registerNumber = localStorage.getItem("registerNumber");
       if (!registerNumber) {
         alert("Registration number not found. Please log in again.");
@@ -149,7 +161,7 @@ export default function StudentAssessmentPage() {
           assessment_id: assessment._id,
           student_email: localStorage.getItem("userEmail"),
           student_id: registerNumber,
-          answers
+          answers: currentAnswers
         })
       });
 
@@ -161,22 +173,28 @@ export default function StudentAssessmentPage() {
       }
 
       // Clear answers so unsaved warning doesn't trigger after submit
-
       setAnswers({});
+      localStorage.removeItem(`assessment_start_${assessment._id}`);
 
-      localStorage.removeItem(
-        `assessment_start_${assessment._id}`
-      );
+      if (isAuto) {
+        alert("Time's up! Assessment submitted successfully.");
+      } else {
+        alert(data.message || "Assessment Submitted Successfully");
+      }
 
-      alert(data.message || "Assessment Submitted Successfully");
       router.push("/student/dashboard");
 
     } catch (error) {
       console.error(error);
       alert("Failed to submit assessment");
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
+  };
+
+  const submitAssessment = () => {
+    doSubmit(answersRef.current, false);
   };
 
   if (loading) {
@@ -213,8 +231,6 @@ export default function StudentAssessmentPage() {
             <p className="text-slate-500 text-lg">Student Assessment</p>
           </div>
 
-
-
           <div className="mt-4 flex flex-wrap gap-4 items-center">
 
             <span
@@ -228,11 +244,23 @@ export default function StudentAssessmentPage() {
               {assessmentStatus}
             </span>
 
-            {timeLeft !== null && (
-              <div className="bg-red-50 border border-red-200 px-4 py-2 rounded-xl">
-                <span className="font-semibold text-red-700">
-                  Time Remaining: {formatTime(timeLeft)}
+            {timeLeft !== null && timeLeft > 0 && (
+              <div className={`border px-4 py-2 rounded-xl transition-colors ${
+                timeLeft <= 5 * 60 * 1000
+                  ? "bg-red-100 border-red-400 animate-pulse"
+                  : "bg-red-50 border-red-200"
+              }`}>
+                <span className={`font-semibold ${
+                  timeLeft <= 5 * 60 * 1000 ? "text-red-700" : "text-red-700"
+                }`}>
+                  ⏱ Time Remaining: {formatTime(timeLeft)}
                 </span>
+              </div>
+            )}
+
+            {timeLeft === 0 && (
+              <div className="bg-red-600 text-white px-4 py-2 rounded-xl font-semibold">
+                Time's Up
               </div>
             )}
 
@@ -300,7 +328,7 @@ export default function StudentAssessmentPage() {
                   </p>
                 </div>
 
-                {/* ANSWER BOX — border always normal, never red */}
+                {/* ANSWER BOX */}
                 <textarea
                   rows={8}
                   value={answerText}
@@ -309,7 +337,7 @@ export default function StudentAssessmentPage() {
                   className="w-full border-2 border-slate-200 rounded-2xl p-5 focus:outline-none focus:ring-2 focus:ring-blue-400 text-slate-900 transition"
                 />
 
-                {/* WORD COUNT — only the count text turns red when over limit */}
+                {/* WORD COUNT */}
                 <div className="flex justify-between items-center mt-3 px-1">
                   <p className="text-slate-500 text-sm">
                     Expected length:{" "}
@@ -319,12 +347,10 @@ export default function StudentAssessmentPage() {
                   </p>
                   <div className="text-right">
                     <p
-                      className={`text-sm font-semibold ${isOverLimit ? "text-red-500" : "text-slate-500"
-                        }`}
+                      className={`text-sm font-semibold ${isOverLimit ? "text-red-500" : "text-slate-500"}`}
                     >
                       {wordCount} / {expectedLength > 0 ? expectedLength : "—"} words
                     </p>
-
                     <p className="text-sm text-slate-500">
                       {characterCount} characters
                     </p>

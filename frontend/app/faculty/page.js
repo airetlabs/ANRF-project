@@ -1,5 +1,5 @@
 "use client";
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -15,7 +15,7 @@ import Select from "react-select";
 export default function Home() {
 
     const router = useRouter();
-
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://anrf-project-production-a47a.up.railway.app";
     const [checkingAuth, setCheckingAuth] = useState(true);
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [activeSection, setActiveSection] = useState("Dashboard");
@@ -50,7 +50,6 @@ export default function Home() {
         }
     ]);
 
-
     const [submissionDetails, setSubmissionDetails] = useState([]);
     const [showSubmissionDetails, setShowSubmissionDetails] = useState(false);
 
@@ -83,25 +82,18 @@ export default function Home() {
     };
 
 
-    // AUTH CHECK — must be faculty role
-    // useEffect(() => {
-    //   const token = localStorage.getItem("token");
-    //   const role = localStorage.getItem("userRole");
-    //   if (!token || role !== "faculty") {
-    //     router.push("/login");
-    //   } else {
-    //     setCheckingAuth(false);
-    //   }
-    // }, []);
-
+    // AUTH CHECK
     useEffect(() => {
-        const token = localStorage.getItem("token");
-        const role = localStorage.getItem("userRole");
-        if (!token || role !== "faculty") {
-            router.replace("/login");
-        } else {
-            setCheckingAuth(false);
-        }
+        const timer = setTimeout(() => {
+            const token = localStorage.getItem("token");
+            const role = localStorage.getItem("userRole");
+            if (!token || role !== "faculty") {
+                router.replace("/login");
+            } else {
+                setCheckingAuth(false);
+            }
+        }, 100);
+        return () => clearTimeout(timer);
     }, []);
 
 
@@ -132,7 +124,7 @@ export default function Home() {
     }, []);
 
 
-    // AUTOSAVE — only saves when there is actual content
+    // AUTOSAVE
     useEffect(() => {
         const hasContent = title.trim() || questions.some((q) => q.question?.trim());
         if (!hasContent) return;
@@ -170,47 +162,6 @@ export default function Home() {
         }
     }, [activeSection]);
 
-    // OPEN SUBMISSIONS PAGE AFTER RETURNING FROM REVIEW
-    useEffect(() => {
-
-        const openSubmissions =
-            localStorage.getItem("openSubmissions");
-
-        const savedAssessmentId =
-            localStorage.getItem(
-                "selectedAssessmentId"
-            );
-
-        if (
-            openSubmissions === "true" &&
-            savedAssessmentId
-        ) {
-
-            setActiveSection(
-                "Submissions"
-            );
-
-            setSelectedAssessmentId(
-                savedAssessmentId
-            );
-
-            fetchSubmissions(
-                savedAssessmentId
-            );
-
-            localStorage.removeItem(
-                "openSubmissions"
-            );
-
-        }
-
-        const handler = (event) => {
-            fetchSubmissions(event.detail);
-        };
-        window.addEventListener("loadSubmissions", handler);
-        return () => window.removeEventListener("loadSubmissions", handler);
-    }, []);
-
 
     // OPEN SUBMISSIONS PAGE AFTER RETURNING FROM REVIEW
     useEffect(() => {
@@ -223,6 +174,12 @@ export default function Home() {
             fetchSubmissions(savedAssessmentId);
             localStorage.removeItem("openSubmissions");
         }
+
+        const handler = (event) => {
+            fetchSubmissions(event.detail);
+        };
+        window.addEventListener("loadSubmissions", handler);
+        return () => window.removeEventListener("loadSubmissions", handler);
     }, []);
 
 
@@ -259,9 +216,7 @@ export default function Home() {
 
 
     const evaluateSubmission = async (submissionId) => {
-
         setEvaluatingSubmission(submissionId);
-
         try {
             const response = await fetch(
                 `${API_URL}/submission/evaluate/${submissionId}`,
@@ -271,19 +226,14 @@ export default function Home() {
             if (!response.ok) {
                 throw new Error(data.detail || "Evaluation failed");
             }
-            alert("Evaluation Completed");
+            toast.success("Evaluation Completed");
             fetchSubmissions(selectedAssessmentId);
         } catch (error) {
             console.error(error);
-
-            alert("Evaluation Failed");
-
+            toast.error("Evaluation Failed");
         } finally {
-
             setEvaluatingSubmission(null);
-
         }
-
     };
 
 
@@ -295,10 +245,21 @@ export default function Home() {
             setShowSubmissionDetails(true);
         } catch (error) {
             console.error(error);
-            alert("Failed to load submission");
-            alert("Evaluation Failed");
+            toast.error("Failed to load submission");
         } finally {
             setEvaluatingSubmission(null);
+        }
+    };
+
+    const exportCSV = async () => {
+        try {
+            window.open(
+                `${API_URL}/submission/export-csv/${selectedAssessmentId}`,
+                "_blank"
+            );
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to export CSV");
         }
     };
 
@@ -341,7 +302,7 @@ export default function Home() {
     };
 
 
-    // ADD QUESTION — inserts after current index
+    // ADD QUESTION
     const addQuestionCard = (index) => {
         const newQuestion = {
             question_id: "",
@@ -532,7 +493,22 @@ export default function Home() {
                             </div>
 
                             <div className="mt-10">
-                                <RecentActivity savedAssessments={savedAssessments} />
+                                <RecentActivity
+                                    savedAssessments={savedAssessments}
+                                    setActiveSection={setActiveSection}
+                                    setTitle={setTitle}
+                                    setQuestions={setQuestions}
+                                    setEditingAssessmentId={setEditingAssessmentId}
+                                    setSubjectCode={setSubjectCode}
+                                    setSubjectName={setSubjectName}
+                                    setExamDate={setExamDate}
+                                    setDuration={setDuration}
+                                    setInstructions={setInstructions}
+                                    setSelectedDepartments={setSelectedDepartments}
+                                    setSelectedYears={setSelectedYears}
+                                    setAvailableFrom={setAvailableFrom}
+                                    setAvailableTo={setAvailableTo}
+                                />
                             </div>
                         </div>
                     )}
@@ -824,9 +800,83 @@ export default function Home() {
                     {/* SUBMISSIONS */}
                     {activeSection === "Submissions" && (
                         <div>
-                            <div className="mb-8">
-                                <h2 className="text-4xl font-bold text-slate-900 mb-3">Student Submissions</h2>
-                                <p className="text-slate-500 text-lg">Assessment ID: {selectedAssessmentId}</p>
+
+                            {/* HEADER + PUBLISH RESULTS BUTTON */}
+                            <div className="mb-8 flex items-start justify-between flex-wrap gap-4">
+                                <div>
+                                    <div className="flex items-center gap-4 mb-3">
+                                        <h2 className="text-4xl font-bold text-slate-900">
+                                            Student Submissions
+                                        </h2>
+
+
+                                    </div>
+
+                                    <p className="text-slate-500 text-lg">
+                                        Assessment ID: {selectedAssessmentId}
+                                    </p>
+                                </div>
+
+                                {(() => {
+                                    const currentAssessment = savedAssessments.find(
+                                        a => a._id === selectedAssessmentId ||
+                                            String(a._id) === String(selectedAssessmentId)
+                                    );
+
+                                    return (
+                                        <div className="flex flex-col items-end gap-2">
+
+                                            {currentAssessment?.results_published ? (
+                                                <div className="bg-green-50 hover:bg-green-200 text-green-700 border border-green-400 text-sm px-4 py-2 rounded-lg font-semibold transition">
+                                                    Results Published
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    onClick={async () => {
+                                                        const allEvaluated = assessmentSubmissions.every(
+                                                            s => s.status === "Evaluated" || s.status === "Finalized"
+                                                        );
+
+                                                        if (!allEvaluated) {
+                                                            toast.error("Please evaluate all submissions before publishing results.");
+                                                            return;
+                                                        }
+
+                                                        try {
+                                                            const res = await fetch(
+                                                                `${API_URL}/assessment/publish-results/${selectedAssessmentId}`,
+                                                                {
+                                                                    method: "PATCH"
+                                                                }
+                                                            );
+
+                                                            if (!res.ok) throw new Error();
+
+                                                            toast.success(
+                                                                "Results published! Students can now view their results."
+                                                            );
+
+                                                            fetchAssessments();
+                                                        } catch {
+                                                            toast.error("Failed to publish results.");
+                                                        }
+                                                    }}
+                                                    className="bg-green-400 hover:bg-green-200 text-green-900 text-sm px-4 py-2 rounded-lg font-medium transition"
+                                                >
+                                                    Publish Results
+                                                </button>
+                                            )}
+
+                                            <button
+                                                onClick={exportCSV}
+                                                className="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-400 text-sm px-4 py-2 rounded-lg font-bold transition"
+                                            >
+                                                Export CSV
+                                            </button>
+
+                                        </div>
+                                    );
+                                })()}
                             </div>
 
                             {loadingSubmissions ? (
@@ -862,16 +912,13 @@ export default function Home() {
                                                         <td className="p-4">
                                                             <button
                                                                 onClick={() => {
-
-                                                                    localStorage.setItem(
-                                                                        "selectedAssessmentId",
-                                                                        selectedAssessmentId
-                                                                    );
-
-                                                                    router.push(
-                                                                        `/assessment-review/${submission.submission_id}`
-                                                                    );
-
+                                                                    if (submission.status !== "Evaluated" && submission.status !== "Finalized") {
+                                                                        toast("⚠️ Evaluation not yet done. AI marks will show as pending.", {
+                                                                            duration: 3000,
+                                                                        });
+                                                                    }
+                                                                    localStorage.setItem("selectedAssessmentId", selectedAssessmentId);
+                                                                    router.push(`/assessment-review/${submission.submission_id}`);
                                                                 }}
                                                                 className="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg"
                                                             >
