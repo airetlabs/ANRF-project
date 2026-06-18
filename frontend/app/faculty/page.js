@@ -827,7 +827,7 @@ export default function Home() {
                                         <div className="flex flex-col items-end gap-2">
 
                                             {currentAssessment?.results_published ? (
-                                                <div className="bg-green-100 text-green-700 font-semibold px-5 py-3 rounded-2xl border border-green-200">
+                                                <div className="bg-green-100 text-green-700 font-semibold px-1 py-2 rounded-xl border border-green-200">
                                                     Results Published
                                                 </div>
                                             ) : (
