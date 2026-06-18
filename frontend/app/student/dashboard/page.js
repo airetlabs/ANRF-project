@@ -13,6 +13,7 @@ export default function StudentDashboard() {
   const [submissionMap, setSubmissionMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [studentEmail, setStudentEmail] = useState("");
+  const [activeTab, setActiveTab] = useState("All");
 
   const [studentInfo, setStudentInfo] = useState({
     registerNumber: "",
@@ -60,7 +61,7 @@ export default function StudentDashboard() {
       );
       const submissionData = await submissionResponse.json();
 
-      
+
 
       const submittedAssessmentIds = submissionData.map(
         (submission) => submission.assessment_id
@@ -79,7 +80,7 @@ export default function StudentDashboard() {
       });
 
       setSubmissionMap(map);
-      
+
 
     } catch (error) {
       console.error(error);
@@ -104,6 +105,25 @@ export default function StudentDashboard() {
       </div>
     );
   }
+
+  const filteredAssessments = assessments.filter((assessment) => {
+    const isSubmitted = submittedIds.includes(assessment._id);
+
+    const now = new Date();
+    const start = new Date(assessment.availableFrom);
+    const end = new Date(assessment.availableTo);
+
+    let status = "Live";
+
+    if (now < start) status = "Upcoming";
+    else if (now > end) status = "Expired";
+
+    if (isSubmitted) status = "Submitted";
+
+    if (activeTab === "All") return true;
+
+    return status === activeTab;
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-slate-200">
@@ -153,13 +173,50 @@ export default function StudentDashboard() {
           </div>
         </div>
 
+
+
         {/* ASSESSMENTS */}
         <div className="mb-8">
           <h2 className="text-4xl font-bold text-slate-900 mb-3">Available Assessments</h2>
           <p className="text-slate-500 text-lg">Assessments assigned to your department and year</p>
+          <div className="flex flex-wrap gap-3 mt-5">
+            {["All", "Live", "Upcoming", "Submitted", "Expired"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition ${activeTab === tab
+                  ? "bg-slate-900 text-white"
+                  : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                  }`}
+              >
+                {tab} (
+                {
+                  tab === "All"
+                    ? assessments.length
+                    : assessments.filter((assessment) => {
+                      const isSubmitted = submittedIds.includes(assessment._id);
+
+                      const now = new Date();
+                      const start = new Date(assessment.availableFrom);
+                      const end = new Date(assessment.availableTo);
+
+                      let status = "Live";
+
+                      if (now < start) status = "Upcoming";
+                      else if (now > end) status = "Expired";
+
+                      if (isSubmitted) status = "Submitted";
+
+                      return status === tab;
+                    }).length
+                }
+                )
+              </button>
+            ))}
+          </div>
         </div>
 
-        {assessments.length === 0 ? (
+        {filteredAssessments.length === 0 ? (
 
           <div className="bg-white rounded-[30px] p-10 border border-slate-200 shadow-sm text-center">
             <div className="text-5xl mb-4">📭</div>
@@ -170,7 +227,7 @@ export default function StudentDashboard() {
         ) : (
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-            {assessments.map((assessment) => {
+            {filteredAssessments.map((assessment) => {
 
               const isSubmitted = submittedIds.includes(assessment._id);
               const submissionInfo = submissionMap[assessment._id];
@@ -255,7 +312,7 @@ export default function StudentDashboard() {
 
                   ) : (
                     <button
-                    
+
                       onClick={() => router.push(`/student/assessment/${assessment._id}`)}
                       disabled={assessmentStatus === "Expired"}
                       className={`w-full py-3 rounded-2xl font-semibold transition ${assessmentStatus === "Expired"
