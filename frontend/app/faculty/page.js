@@ -251,6 +251,18 @@ export default function Home() {
         }
     };
 
+    const exportCSV = async () => {
+        try {
+            window.open(
+                `${API_URL}/submission/export-csv/${selectedAssessmentId}`,
+                "_blank"
+            );
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to export CSV");
+        }
+    };
+
 
     // RESET ALL FIELDS
     const resetFields = () => {
@@ -792,49 +804,77 @@ export default function Home() {
                             {/* HEADER + PUBLISH RESULTS BUTTON */}
                             <div className="mb-8 flex items-start justify-between flex-wrap gap-4">
                                 <div>
-                                    <h2 className="text-4xl font-bold text-slate-900 mb-3">Student Submissions</h2>
+                                    <div className="flex items-center gap-4 mb-3">
+                                        <h2 className="text-4xl font-bold text-slate-900">
+                                            Student Submissions
+                                        </h2>
+
+
+                                    </div>
+
                                     <p className="text-slate-500 text-lg">
-                                        Assessment: {
-                                            savedAssessments.find(a => a._id === selectedAssessmentId)?.title ||
-                                            savedAssessments.find(a => String(a._id) === String(selectedAssessmentId))?.title ||
-                                            ""
-                                        }
+                                        Assessment ID: {selectedAssessmentId}
                                     </p>
                                 </div>
 
                                 {(() => {
                                     const currentAssessment = savedAssessments.find(
-                                        a => a._id === selectedAssessmentId || String(a._id) === String(selectedAssessmentId)
+                                        a => a._id === selectedAssessmentId ||
+                                            String(a._id) === String(selectedAssessmentId)
                                     );
-                                    return currentAssessment?.results_published ? (
-                                        <div className="bg-green-100 text-green-700 font-semibold px-5 py-3 rounded-2xl border border-green-200">
-                                            ✓ Results Published
+
+                                    return (
+                                        <div className="flex flex-col items-end gap-2">
+
+                                            {currentAssessment?.results_published ? (
+                                                <div className="bg-green-100 text-green-700 font-semibold px-5 py-3 rounded-2xl border border-green-200">
+                                                    Results Published
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    onClick={async () => {
+                                                        const allEvaluated = assessmentSubmissions.every(
+                                                            s => s.status === "Evaluated" || s.status === "Finalized"
+                                                        );
+
+                                                        if (!allEvaluated) {
+                                                            toast.error("Please evaluate all submissions before publishing results.");
+                                                            return;
+                                                        }
+
+                                                        try {
+                                                            const res = await fetch(
+                                                                `${API_URL}/assessment/publish-results/${selectedAssessmentId}`,
+                                                                {
+                                                                    method: "PATCH"
+                                                                }
+                                                            );
+
+                                                            if (!res.ok) throw new Error();
+
+                                                            toast.success(
+                                                                "Results published! Students can now view their results."
+                                                            );
+
+                                                            fetchAssessments();
+                                                        } catch {
+                                                            toast.error("Failed to publish results.");
+                                                        }
+                                                    }}
+                                                    className="bg-green-400 hover:bg-green-200 text-green-900 text-sm px-4 py-2 rounded-lg font-medium transition"
+                                                >
+                                                    Publish Results
+                                                </button>
+                                            )}
+
+                                            <button
+                                                onClick={exportCSV}
+                                                className="bg-blue-100 hover:bg-blue-200 text-blue-700 text-sm px-4 py-2 rounded-lg font-medium transition"
+                                            >
+                                                Export CSV
+                                            </button>
+
                                         </div>
-                                    ) : (
-                                        <button
-                                            onClick={async () => {
-                                                const allEvaluated = assessmentSubmissions.every(
-                                                    s => s.status === "Evaluated" || s.status === "Finalized"
-                                                );
-                                                if (!allEvaluated) {
-                                                    toast.error("Please evaluate all submissions before publishing results.");
-                                                    return;
-                                                }
-                                                try {
-                                                    const res = await fetch(`${API_URL}/assessment/publish-results/${selectedAssessmentId}`, {
-                                                        method: "PATCH"
-                                                    });
-                                                    if (!res.ok) throw new Error();
-                                                    toast.success("Results published! Students can now view their results.");
-                                                    fetchAssessments();
-                                                } catch {
-                                                    toast.error("Failed to publish results.");
-                                                }
-                                            }}
-                                            className="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-3 rounded-2xl transition"
-                                        >
-                                            Publish Results
-                                        </button>
                                     );
                                 })()}
                             </div>
@@ -893,13 +933,12 @@ export default function Home() {
                                                                     evaluatingSubmission === submission.submission_id
                                                                 }
                                                                 onClick={() => evaluateSubmission(submission.submission_id)}
-                                                                className={`px-4 py-2 rounded-lg text-white ${
-                                                                    (submission.status === "Evaluated" || submission.status === "Finalized")
-                                                                        ? "bg-green-600 cursor-not-allowed"
-                                                                        : evaluatingSubmission === submission.submission_id
-                                                                            ? "bg-blue-400 cursor-not-allowed"
-                                                                            : "bg-blue-600 hover:bg-blue-700"
-                                                                }`}
+                                                                className={`px-4 py-2 rounded-lg text-white ${(submission.status === "Evaluated" || submission.status === "Finalized")
+                                                                    ? "bg-green-600 cursor-not-allowed"
+                                                                    : evaluatingSubmission === submission.submission_id
+                                                                        ? "bg-blue-400 cursor-not-allowed"
+                                                                        : "bg-blue-600 hover:bg-blue-700"
+                                                                    }`}
                                                             >
                                                                 {evaluatingSubmission === submission.submission_id
                                                                     ? "Evaluating..."

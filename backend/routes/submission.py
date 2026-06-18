@@ -1,5 +1,8 @@
 import logging
 import json
+from fastapi.responses import StreamingResponse
+import csv
+from io import StringIO
 
 from fastapi import APIRouter, HTTPException
 from bson import ObjectId
@@ -535,3 +538,50 @@ def student_result(submission_id: str):
         "total_marks": round(total_marks),
         "questions": result
     }
+    
+@router.get("/export-csv/{assessment_id}")
+def export_csv(assessment_id: str):
+
+    assessment = db.Assessment.find_one(
+        {"_id": ObjectId(assessment_id)}
+    )
+
+    if not assessment:
+        raise HTTPException(status_code=404, detail="Assessment not found")
+
+    submissions = list(
+        db.StudentSubmission.find(
+            {"assessment_id": assessment_id}
+        )
+    )
+
+    output = StringIO()
+
+    writer = csv.writer(output)
+
+    writer.writerow([
+        "S.No",
+        "Student Reg No",
+        "Assessment Name",
+        "Final Marks"
+    ])
+
+    for idx, submission in enumerate(submissions, start=1):
+
+        writer.writerow([
+            idx,
+            submission.get("student_id", ""),
+            assessment.get("title", ""),
+            submission.get("final_marks", 0)
+        ])
+
+    output.seek(0)
+
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition":
+            f"attachment; filename={assessment.get('title','assessment')}_marks.csv"
+        }
+    )
