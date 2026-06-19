@@ -14,6 +14,8 @@ export default function StudentDashboard() {
   const [loading, setLoading] = useState(true);
   const [studentEmail, setStudentEmail] = useState("");
   const [activeTab, setActiveTab] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
+  const assessmentsPerPage = 2;
 
   const [studentInfo, setStudentInfo] = useState({
     registerNumber: "",
@@ -125,6 +127,22 @@ export default function StudentDashboard() {
     return status === activeTab;
   });
 
+  const totalPages = Math.ceil(
+
+    filteredAssessments.length / assessmentsPerPage
+
+  );
+
+
+
+  const paginatedAssessments = filteredAssessments.slice(
+
+    (currentPage - 1) * assessmentsPerPage,
+
+    currentPage * assessmentsPerPage
+
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-slate-200">
 
@@ -151,36 +169,30 @@ export default function StudentDashboard() {
       <div className="px-10 py-10">
 
         {/* PROFILE CARD */}
-        <div className="bg-white rounded-[24px] p-6 border border-slate-200 shadow-sm mb-8">
-          <h2 className="text-2xl font-bold text-slate-900 mb-4">My Profile</h2>
-          <div className="grid md:grid-cols-3 gap-6">
+        <div className="bg-white rounded-2xl px-6 py-4 border border-slate-200 shadow-sm mb-8">
+          <div className="flex flex-wrap items-center gap-8 text-sm md:text-base">
 
-            <div className="bg-blue-50 rounded-xl p-3 border border-blue-200">
-              <p className="text-blue-600 text-sm mb-1 font-medium">
-                Register Number
-              </p>
-              <p className="text-lg font-semibold text-slate-900">
+            <div>
+              <span className="text-slate-500">Register No:</span>{" "}
+              <span className="font-semibold text-slate-900">
                 {studentInfo.registerNumber}
-              </p>
+              </span>
             </div>
 
-            <div className="bg-yellow-50 rounded-xl p-3 border border-yellow-200">
-              <p className="text-yellow-600 text-sm mb-1 font-medium">
-                Department
-              </p>
-              <p className="text-lg font-semibold text-slate-900">
+            <div>
+              <span className="text-slate-500">Department:</span>{" "}
+              <span className="font-semibold text-slate-900">
                 {studentInfo.department}
-              </p>
+              </span>
             </div>
 
-            <div className="bg-purple-50 rounded-xl p-3 border border-purple-200">
-              <p className="text-purple-600 text-sm mb-1 font-medium">
-                Year
-              </p>
-              <p className="text-lg font-semibold text-slate-900">
-                Year {studentInfo.year}
-              </p>
+            <div>
+              <span className="text-slate-500">Year:</span>{" "}
+              <span className="font-semibold text-slate-900">
+                {studentInfo.year}
+              </span>
             </div>
+
           </div>
         </div>
 
@@ -188,13 +200,16 @@ export default function StudentDashboard() {
 
         {/* ASSESSMENTS */}
         <div className="mb-8">
-          <h2 className="text-4xl font-bold text-slate-900 mb-3">Available Assessments</h2>
-          <p className="text-slate-500 text-lg">Assessments assigned to your department and year</p>
+          <h2 className="text-3xl font-bold text-slate-900 mb-2">Available Assessments</h2>
+          
           <div className="flex flex-wrap gap-3 mt-5">
             {["All", "Live", "Upcoming", "Submitted", "Expired"].map((tab) => (
               <button
                 key={tab}
-                onClick={() => setActiveTab(tab)}
+                onClick={() => {
+                  setActiveTab(tab);
+                  setCurrentPage(1);
+                }}
                 className={`px-4 py-2 rounded-xl text-sm font-medium transition ${activeTab === tab
                   ? "bg-slate-900 text-white"
                   : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
@@ -238,7 +253,7 @@ export default function StudentDashboard() {
         ) : (
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filteredAssessments.map((assessment) => {
+            {paginatedAssessments.map((assessment) => {
 
               const isSubmitted = submittedIds.includes(assessment._id);
               const submissionInfo = submissionMap[assessment._id];
@@ -258,7 +273,7 @@ export default function StudentDashboard() {
               return (
                 <div
                   key={assessment._id}
-                  className="bg-white rounded-[24px] p-6 border border-slate-200 shadow-sm hover:shadow-md transition"
+                  className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition"
                 >
 
                   {/* TITLE + STATUS */}
@@ -344,7 +359,7 @@ export default function StudentDashboard() {
                             `/student/result/${submissionInfo.submissionId}`
                           )
                         }
-                        className="w-full bg-blue-800 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold transition"
+                        className="w-full bg-blue-800 hover:bg-blue-700 text-white py-2.5 rounded-xl font-semibold transition"
                       >
                         View Result
                       </button>
@@ -353,9 +368,9 @@ export default function StudentDashboard() {
 
                       <button
                         disabled
-                        className="w-full bg-green-800 text-white py-3 rounded-xl font-semibold cursor-not-allowed opacity-80"
+                        className="w-full bg-green-800 text-white py-2.5 rounded-xl font-semibold cursor-not-allowed opacity-80"
                       >
-                         Submitted
+                        Submitted
                       </button>
 
                     )
@@ -365,7 +380,7 @@ export default function StudentDashboard() {
 
                       onClick={() => router.push(`/student/assessment/${assessment._id}`)}
                       disabled={assessmentStatus === "Expired"}
-                      className={`w-full py-3 rounded-xl font-semibold transition ${assessmentStatus === "Expired"
+                      className={`w-full py-2.5 rounded-xl font-semibold transition ${assessmentStatus === "Expired"
                         ? "bg-gray-400 text-white cursor-not-allowed"
                         : "bg-slate-900 hover:bg-slate-700 text-white"
                         }`}
@@ -381,8 +396,46 @@ export default function StudentDashboard() {
             })}
           </div>
 
+
         )}
+
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-6 mt-10 text-slate-500">
+
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(currentPage - 1)}
+              className="text-xl hover:text-slate-900 disabled:opacity-30"
+            >
+              ‹
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentPage(i + 1)}
+                className={`text-lg transition ${currentPage === i + 1
+                  ? "text-slate-900 font-semibold underline underline-offset-4"
+                  : "text-slate-400 hover:text-slate-700"
+                  }`}
+              >
+                {i + 1}
+              </button>
+            ))}
+
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(currentPage + 1)}
+              className="text-xl hover:text-slate-900 disabled:opacity-30"
+            >
+              ›
+            </button>
+
+          </div>
+        )}
+
       </div>
+
     </div>
   );
 }
