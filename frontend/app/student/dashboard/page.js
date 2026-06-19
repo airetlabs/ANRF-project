@@ -344,7 +344,7 @@ export default function StudentDashboard() {
                             `/student/result/${submissionInfo.submissionId}`
                           )
                         }
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl font-semibold transition"
+                        className="w-full bg-blue-800 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold transition"
                       >
                         View Result
                       </button>
@@ -353,9 +353,9 @@ export default function StudentDashboard() {
 
                       <button
                         disabled
-                        className="w-full bg-green-600 text-white py-3 rounded-2xl font-semibold cursor-not-allowed opacity-80"
+                        className="w-full bg-green-800 text-white py-3 rounded-xl font-semibold cursor-not-allowed opacity-80"
                       >
-                        ✓ Submitted
+                         Submitted
                       </button>
 
                     )
@@ -365,7 +365,7 @@ export default function StudentDashboard() {
 
                       onClick={() => router.push(`/student/assessment/${assessment._id}`)}
                       disabled={assessmentStatus === "Expired"}
-                      className={`w-full py-3 rounded-2xl font-semibold transition ${assessmentStatus === "Expired"
+                      className={`w-full py-3 rounded-xl font-semibold transition ${assessmentStatus === "Expired"
                         ? "bg-gray-400 text-white cursor-not-allowed"
                         : "bg-slate-900 hover:bg-slate-700 text-white"
                         }`}
