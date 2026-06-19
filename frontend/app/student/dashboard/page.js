@@ -151,25 +151,36 @@ export default function StudentDashboard() {
       <div className="px-10 py-10">
 
         {/* PROFILE CARD */}
-        <div className="bg-white rounded-[30px] p-8 border border-slate-200 shadow-sm mb-10">
-          <h2 className="text-3xl font-bold text-slate-900 mb-6">My Profile</h2>
+        <div className="bg-white rounded-[24px] p-6 border border-slate-200 shadow-sm mb-8">
+          <h2 className="text-2xl font-bold text-slate-900 mb-4">My Profile</h2>
           <div className="grid md:grid-cols-3 gap-6">
 
-            <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200">
-              <p className="text-slate-500 text-sm mb-1">Register Number</p>
-              <p className="text-xl font-bold text-slate-900">{studentInfo.registerNumber}</p>
+            <div className="bg-blue-50 rounded-xl p-3 border border-blue-200">
+              <p className="text-blue-600 text-sm mb-1 font-medium">
+                Register Number
+              </p>
+              <p className="text-lg font-semibold text-slate-900">
+                {studentInfo.registerNumber}
+              </p>
             </div>
 
-            <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200">
-              <p className="text-slate-500 text-sm mb-1">Department</p>
-              <p className="text-xl font-bold text-slate-900">{studentInfo.department}</p>
+            <div className="bg-yellow-50 rounded-xl p-3 border border-yellow-200">
+              <p className="text-yellow-600 text-sm mb-1 font-medium">
+                Department
+              </p>
+              <p className="text-lg font-semibold text-slate-900">
+                {studentInfo.department}
+              </p>
             </div>
 
-            <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200">
-              <p className="text-slate-500 text-sm mb-1">Year</p>
-              <p className="text-xl font-bold text-slate-900">Year {studentInfo.year}</p>
+            <div className="bg-purple-50 rounded-xl p-3 border border-purple-200">
+              <p className="text-purple-600 text-sm mb-1 font-medium">
+                Year
+              </p>
+              <p className="text-lg font-semibold text-slate-900">
+                Year {studentInfo.year}
+              </p>
             </div>
-
           </div>
         </div>
 
@@ -226,7 +237,7 @@ export default function StudentDashboard() {
 
         ) : (
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredAssessments.map((assessment) => {
 
               const isSubmitted = submittedIds.includes(assessment._id);
@@ -247,7 +258,7 @@ export default function StudentDashboard() {
               return (
                 <div
                   key={assessment._id}
-                  className="bg-white rounded-[30px] p-8 border border-slate-200 shadow-sm hover:shadow-md transition"
+                  className="bg-white rounded-[24px] p-6 border border-slate-200 shadow-sm hover:shadow-md transition"
                 >
 
                   {/* TITLE + STATUS */}
@@ -274,13 +285,52 @@ export default function StudentDashboard() {
                   </div>
 
                   {/* DETAILS */}
-                  <div className="space-y-2 mb-6 text-sm text-slate-600">
-                    <p><span className="font-semibold text-slate-700">Subject:</span> {assessment.subjectName}</p>
-                    <p><span className="font-semibold text-slate-700">Subject Code:</span> {assessment.subjectCode}</p>
-                    <p><span className="font-semibold text-slate-700">Duration:</span> {assessment.duration} mins</p>
-                    <p><span className="font-semibold text-slate-700">Exam Date:</span> {new Date(assessment.examDate).toLocaleDateString("en-GB")}</p>
-                    <p><span className="font-semibold text-slate-700">Available From:</span> {new Date(assessment.availableFrom).toLocaleString("en-GB")}</p>
-                    <p><span className="font-semibold text-slate-700">Available To:</span> {new Date(assessment.availableTo).toLocaleString("en-GB")}</p>
+                  <div className="mb-6">
+
+                    <div className="text-sm text-slate-700 font-medium mb-4">
+                      {assessment.subjectName} • {assessment.subjectCode} • {assessment.duration} mins
+                    </div>
+
+                    <div className="space-y-3 text-sm">
+
+                      <div>
+                        <p className="text-slate-500">Exam Date</p>
+                        <p className="font-medium text-slate-800">
+                          {new Date(assessment.examDate).toLocaleDateString("en-GB", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-slate-500">Window</p>
+                        <p className="font-medium text-slate-800">
+                          {new Date(assessment.availableFrom).toLocaleDateString("en-GB", {
+                            day: "numeric",
+                            month: "short",
+                          })}{" "}
+                          {new Date(assessment.availableFrom).toLocaleTimeString("en-US", {
+                            hour: "numeric",
+                            minute: "2-digit",
+                            hour12: true,
+                          })}
+                          {" - "}
+                          {new Date(assessment.availableTo).toLocaleDateString("en-GB", {
+                            day: "numeric",
+                            month: "short",
+                          })}{" "}
+                          {new Date(assessment.availableTo).toLocaleTimeString("en-US", {
+                            hour: "numeric",
+                            minute: "2-digit",
+                            hour12: true,
+                          })}
+                        </p>
+                      </div>
+
+                    </div>
+
                   </div>
 
                   {/* BUTTON */}
