@@ -92,7 +92,7 @@ export default function StudentResultPage() {
             0
         ) || 0;
 
-    
+
 
     return (
         <div className="min-h-screen bg-slate-100 p-8">
@@ -163,7 +163,7 @@ export default function StudentResultPage() {
                             {q.labels_json?.length > 0 && (
                                 <button
                                     onClick={() => {
-                                        
+
                                         setSelectedFeedback(q.labels_json);
                                     }}
                                     className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
@@ -192,36 +192,52 @@ export default function StudentResultPage() {
                                         <tr className="bg-slate-100">
                                             <th className="border p-3 text-left">Rubric Point</th>
                                             <th className="border p-3 text-center">Status</th>
-                                            <th className="border p-3 text-center">Marks</th>
+                                            <th className="border p-3 text-center">Rubric Marks</th>
+                                            <th className="border p-3 text-center">AI Marks</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {selectedFeedback.map((item, index) => (
-                                            <tr key={index}>
+                                        {selectedFeedback.map((item, index) => {
 
-                                                <td className="border p-3 text-slate-800">
-                                                    {item.faculty_rubric_statement}
-                                                </td>
+                                            const aiMarks =
+                                                item.label?.toLowerCase() === "matched"
+                                                    ? item.total_marks
+                                                    : item.label?.toLowerCase() === "partial"
+                                                        ? (item.total_marks * 0.75).toFixed(2)
+                                                        : 0;
 
-                                                <td className="border p-3 text-center">
-                                                    <span
-                                                        className={`px-3 py-1 rounded-full text-sm font-semibold ${item.label?.toLowerCase() === "matched"
-                                                            ? "bg-green-100 text-green-700"
-                                                            : item.label?.toLowerCase() === "contradicting"
-                                                                ? "bg-red-100 text-red-700"
-                                                                : "bg-yellow-100 text-yellow-700"
-                                                            }`}
-                                                    >
-                                                        {item.label}
-                                                    </span>
-                                                </td>
+                                            return (
+                                                <tr key={index}>
+                                                    
 
-                                                <td className="border p-3 text-center text-slate-800">
-                                                    {item.total_marks}
-                                                </td>
+                                                    <td className="border p-3 text-slate-800">
+                                                        {item.faculty_rubric_statement}
+                                                    </td>
 
-                                            </tr>
-                                        ))}
+                                                    <td className="border p-3 text-center">
+                                                        <span
+                                                            className={`px-3 py-1 rounded-full text-sm font-semibold ${item.label?.toLowerCase() === "matched"
+                                                                ? "bg-green-100 text-green-700"
+                                                                : item.label?.toLowerCase() === "contradicting"
+                                                                    ? "bg-red-100 text-red-700"
+                                                                    : "bg-yellow-100 text-yellow-700"
+                                                                }`}
+                                                        >
+                                                            {item.label}
+                                                        </span>
+                                                    </td>
+
+                                                    <td className="border p-3 text-center text-slate-800">
+                                                        {item.total_marks}
+                                                    </td>
+
+                                                    <td className="border p-3 text-center font-semibold text-blue-700">
+                                                        {aiMarks}
+                                                    </td>
+
+                                                </tr>
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                             </div>
