@@ -15,7 +15,7 @@ export default function StudentDashboard() {
   const [studentEmail, setStudentEmail] = useState("");
   const [activeTab, setActiveTab] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
-  const assessmentsPerPage = 2;
+  const assessmentsPerPage = 9;
 
   const [studentInfo, setStudentInfo] = useState({
     registerNumber: "",
