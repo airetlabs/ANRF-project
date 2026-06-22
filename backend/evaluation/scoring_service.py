@@ -2,7 +2,6 @@ from database import db
 
 
 def final_score_combined(student_id, question_id, assessment_id):
-    # FIX — filter by assessment_id too
     result_doc = db.EvaluationResult.find_one({
         "question_id": question_id,
         "student_id": student_id,
@@ -11,10 +10,20 @@ def final_score_combined(student_id, question_id, assessment_id):
     if not result_doc:
         return
 
-    semantic_marks = float(result_doc.get("semantic_marks") or 0)
-    technical_marks = float(result_doc.get("technical_score") or 0)
+    
+    # The deterministic, rubric-label-driven score IS the final score.
+    # Do not blend in a separate "technical_marks" similarity metric —
+    # that allowed contradicted/absent answers to still earn marks,
+    # because technical_marks is computed independently of the labels
+    # and has no concept of "this point was marked contradicting".
+    #
+    # semantic_marks already correctly implements the rubric rule
+    # (matched = full marks, partial = 75%, contradicting/absent = 0)
+    # inside similarity_marks(). We just need to respect that number,
+    # not water it down with an unrelated score.
 
-    # FIX — filter Question by assessment_id too
+    semantic_marks = float(result_doc.get("semantic_marks") or 0)
+
     question_doc = db.Question.find_one({
         "question_id": question_id,
         "assessment_id": assessment_id
@@ -25,9 +34,8 @@ def final_score_combined(student_id, question_id, assessment_id):
         else 0.0
     )
 
-    final_marks = (
-        semantic_marks * 0.85 + (technical_marks / 10) * 0.15 * total_marks
-    )
+    # Safety clamp — never exceed faculty-assigned max marks, never go negative.
+    final_marks = max(0.0, min(semantic_marks, total_marks))
     final_marks = round(final_marks, 2)
 
     db.EvaluationResult.update_one(
