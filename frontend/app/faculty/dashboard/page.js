@@ -1,4 +1,3 @@
-
 "use client";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://anrf-project-production-a47a.up.railway.app";
 import { useState, useEffect } from "react";
@@ -38,6 +37,9 @@ export default function Home() {
   const [assessmentSubmissions, setAssessmentSubmissions] = useState([]);
   const [loadingSubmissions, setLoadingSubmissions] = useState(false);
   const [evaluatingSubmission, setEvaluatingSubmission] = useState(null);
+  const [exportingCSV, setExportingCSV] = useState(false);
+  const [exportingHTML, setExportingHTML] = useState(false);
+  const [publishingResults, setPublishingResults] = useState(false);
 
   const [questions, setQuestions] = useState([
     {
@@ -56,10 +58,6 @@ export default function Home() {
     question: "", answer_key: "", rubric: "", marks: "", expected_length: ""
   });
 
-  const [submissionDetails, setSubmissionDetails] = useState([]);
-  const [showSubmissionDetails, setShowSubmissionDetails] = useState(false);
-
-
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       if (activeSection === "Create Assessment" && title.trim()) {
@@ -70,7 +68,6 @@ export default function Home() {
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [activeSection, title]);
-
 
   const handleSectionChange = (newSection) => {
     if (activeSection === "Create Assessment" && newSection !== "Create Assessment") {
@@ -85,7 +82,6 @@ export default function Home() {
     setActiveSection(newSection);
   };
 
-
   useEffect(() => {
     const token = localStorage.getItem("token");
     const role = localStorage.getItem("userRole");
@@ -95,7 +91,6 @@ export default function Home() {
       setCheckingAuth(false);
     }
   }, []);
-
 
   useEffect(() => {
     const savedDraft = localStorage.getItem("assessmentDraft");
@@ -122,7 +117,6 @@ export default function Home() {
     }
   }, []);
 
-
   useEffect(() => {
     const hasContent = title.trim() || questions.some((q) => q.question?.trim());
     if (!hasContent) return;
@@ -135,25 +129,15 @@ export default function Home() {
     );
   }, [title, subjectCode, subjectName, examDate, duration, instructions, availableFrom, availableTo, questions, selectedDepartments, selectedYears]);
 
-
   useEffect(() => {
     fetchAssessments();
   }, []);
-
-
-  useEffect(() => {
-    const handler = (event) => { fetchSubmissions(event.detail); };
-    window.addEventListener("loadSubmissions", handler);
-    return () => window.removeEventListener("loadSubmissions", handler);
-  }, []);
-
 
   useEffect(() => {
     if (activeSection === "Submissions" && selectedAssessmentId) {
       fetchSubmissions(selectedAssessmentId);
     }
   }, [activeSection]);
-
 
   useEffect(() => {
     const openSubmissions = localStorage.getItem("openSubmissions");
@@ -169,7 +153,6 @@ export default function Home() {
     return () => window.removeEventListener("loadSubmissions", handler);
   }, []);
 
-
   const fetchAssessments = async () => {
     try {
       const facultyEmail = localStorage.getItem("userEmail");
@@ -181,7 +164,6 @@ export default function Home() {
       console.error(error);
     }
   };
-
 
   const fetchSubmissions = async (assessmentId) => {
     try {
@@ -197,7 +179,6 @@ export default function Home() {
     }
   };
 
-
   const evaluateSubmission = async (submissionId) => {
     setEvaluatingSubmission(submissionId);
     try {
@@ -207,31 +188,203 @@ export default function Home() {
       );
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || "Evaluation failed");
-      alert("Evaluation Completed");
+      toast.success("Evaluation Completed");
       fetchSubmissions(selectedAssessmentId);
     } catch (error) {
       console.error(error);
-      alert("Evaluation Failed");
+      toast.error("Evaluation Failed");
     } finally {
       setEvaluatingSubmission(null);
     }
   };
 
-
-  const viewSubmission = async (submissionId) => {
+  // ───────────────────────── MODULE 8: EXPORT CSV ─────────────────────────
+  const exportCSV = async () => {
+    if (!selectedAssessmentId) return;
     try {
-      const response = await fetch(`${API_URL}/submission/view/${submissionId}`);
-      const data = await response.json();
-      setSubmissionDetails(data);
-      setShowSubmissionDetails(true);
+      setExportingCSV(true);
+      const response = await fetch(`${API_URL}/submission/export-csv/${selectedAssessmentId}`);
+      if (!response.ok) throw new Error();
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const assessment = savedAssessments.find(
+        (a) => a._id === selectedAssessmentId || String(a._id) === String(selectedAssessmentId)
+      );
+      const safeTitle = (assessment?.title || "assessment").replace(/[^a-zA-Z0-9-_]/g, "_");
+      a.download = `${safeTitle}_marks.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success("CSV exported successfully");
     } catch (error) {
       console.error(error);
-      alert("Failed to load submission");
+      toast.error("Failed to export CSV");
     } finally {
-      setEvaluatingSubmission(null);
+      setExportingCSV(false);
     }
   };
 
+  // ───────────────────── MODULE 8: HTML MARKSHEET EXPORT ─────────────────────
+  const exportHTMLMarksheet = () => {
+    if (!selectedAssessmentId || assessmentSubmissions.length === 0) return;
+    try {
+      setExportingHTML(true);
+
+      const assessment = savedAssessments.find(
+        (a) => a._id === selectedAssessmentId || String(a._id) === String(selectedAssessmentId)
+      );
+      const assessmentTitle = assessment?.title || "Assessment";
+
+      const evaluatedCount = assessmentSubmissions.filter(
+        (s) => s.status === "Finalized" || s.status === "Evaluated"
+      ).length;
+      const pendingCount = assessmentSubmissions.length - evaluatedCount;
+      const scored = assessmentSubmissions.filter((s) => s.final_marks > 0);
+      const avgMarks = scored.length > 0
+        ? Math.round(scored.reduce((sum, s) => sum + s.final_marks, 0) / scored.length)
+        : 0;
+
+      const escapeHtml = (str) =>
+        String(str ?? "").replace(/[&<>"']/g, (c) => ({
+          "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+        }[c]));
+
+      const rows = assessmentSubmissions.map((s, idx) => {
+        const statusStyle =
+          s.status === "Finalized" ? "background:#dcfce7;color:#16a34a" :
+          s.status === "Evaluated" ? "background:#dbeafe;color:#2563eb" :
+          "background:#fef9c3;color:#92400e";
+        return `
+        <tr style="${idx % 2 === 0 ? "background:#f8fafc" : "background:#fff"}">
+          <td style="border:1px solid #e2e8f0;padding:12px 16px;text-align:center;color:#64748b">${idx + 1}</td>
+          <td style="border:1px solid #e2e8f0;padding:12px 16px;font-weight:600;color:#0f172a">${escapeHtml(s.student_id)}</td>
+          <td style="border:1px solid #e2e8f0;padding:12px 16px;color:#334155">${escapeHtml(s.student_email)}</td>
+          <td style="border:1px solid #e2e8f0;padding:12px 16px;text-align:center">
+            <span style="padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;${statusStyle}">${escapeHtml(s.status)}</span>
+          </td>
+          <td style="border:1px solid #e2e8f0;padding:12px 16px;text-align:center;font-weight:700;font-size:16px;color:${s.final_marks > 0 ? "#16a34a" : "#94a3b8"}">
+            ${s.final_marks > 0 ? Math.round(s.final_marks) : "—"}
+          </td>
+        </tr>`;
+      }).join("");
+
+      const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Marksheet - ${escapeHtml(assessmentTitle)}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; }
+  @media print {
+    body { background: #fff; }
+    .no-print { display: none !important; }
+    .page { box-shadow: none !important; margin: 0 !important; border-radius: 0 !important; }
+  }
+</style>
+</head>
+<body>
+  <div class="no-print" style="background:#1e293b;color:#fff;padding:12px 24px;display:flex;justify-content:space-between;align-items:center">
+    <span style="font-weight:600">AcadAIsist — Faculty Marksheet</span>
+    <button onclick="window.print()" style="background:#3b82f6;color:#fff;border:none;padding:8px 20px;border-radius:8px;font-weight:600;cursor:pointer">Print / Save as PDF</button>
+  </div>
+  <div class="page" style="max-width:960px;margin:32px auto;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)">
+
+    <div style="background:#0f172a;padding:36px 40px">
+      <p style="color:#94a3b8;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Faculty Marksheet</p>
+      <h1 style="color:#fff;font-size:24px;font-weight:800;margin-bottom:20px">${escapeHtml(assessmentTitle)}</h1>
+      <div style="display:flex;gap:20px;flex-wrap:wrap">
+        <div style="background:rgba(255,255,255,0.08);border-radius:12px;padding:14px 20px;text-align:center">
+          <p style="color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">Total Students</p>
+          <p style="color:#fff;font-size:24px;font-weight:800">${assessmentSubmissions.length}</p>
+        </div>
+        <div style="background:rgba(255,255,255,0.08);border-radius:12px;padding:14px 20px;text-align:center">
+          <p style="color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">Evaluated</p>
+          <p style="color:#4ade80;font-size:24px;font-weight:800">${evaluatedCount}</p>
+        </div>
+        <div style="background:rgba(255,255,255,0.08);border-radius:12px;padding:14px 20px;text-align:center">
+          <p style="color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">Pending</p>
+          <p style="color:#facc15;font-size:24px;font-weight:800">${pendingCount}</p>
+        </div>
+        <div style="background:rgba(255,255,255,0.08);border-radius:12px;padding:14px 20px;text-align:center">
+          <p style="color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">Class Average</p>
+          <p style="color:#60a5fa;font-size:24px;font-weight:800">${avgMarks}</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:32px 40px">
+      <table style="width:100%;border-collapse:collapse;font-size:14px">
+        <thead>
+          <tr style="background:#f1f5f9">
+            <th style="border:1px solid #e2e8f0;padding:12px 16px;text-align:center;color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:0.05em">#</th>
+            <th style="border:1px solid #e2e8f0;padding:12px 16px;text-align:left;color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:0.05em">Register No.</th>
+            <th style="border:1px solid #e2e8f0;padding:12px 16px;text-align:left;color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:0.05em">Email</th>
+            <th style="border:1px solid #e2e8f0;padding:12px 16px;text-align:center;color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:0.05em">Status</th>
+            <th style="border:1px solid #e2e8f0;padding:12px 16px;text-align:center;color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:0.05em">Final Marks</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+
+    <div style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:20px 40px;display:flex;justify-content:space-between;align-items:center">
+      <p style="font-size:12px;color:#94a3b8">Generated by AcadAIsist • AI-Assisted Academic Evaluation</p>
+      <p style="font-size:12px;color:#94a3b8">Generated on ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+      const blob = new Blob([html], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${assessmentTitle.replace(/[^a-zA-Z0-9-_]/g, "_")}_marksheet.html`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success("HTML marksheet exported");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to export marksheet");
+    } finally {
+      setExportingHTML(false);
+    }
+  };
+
+  // ───────────────────────── MODULE 8: PUBLISH RESULTS ─────────────────────────
+  const publishResults = async () => {
+    if (!selectedAssessmentId) return;
+
+    const allEvaluated =
+      assessmentSubmissions.length > 0 &&
+      assessmentSubmissions.every((s) => s.status === "Evaluated" || s.status === "Finalized");
+
+    if (!allEvaluated) {
+      toast.error("Please evaluate all submissions before publishing results.");
+      return;
+    }
+
+    try {
+      setPublishingResults(true);
+      const response = await fetch(`${API_URL}/assessment/publish-results/${selectedAssessmentId}`, {
+        method: "PATCH"
+      });
+      if (!response.ok) throw new Error();
+      toast.success("Results published! Students can now view their results.");
+      fetchAssessments();
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to publish results.");
+    } finally {
+      setPublishingResults(false);
+    }
+  };
 
   const resetFields = () => {
     setTitle(""); setSubjectCode(""); setSubjectName(""); setExamDate("");
@@ -240,7 +393,6 @@ export default function Home() {
     setQuestions([{ question_id: "", question: "", answer_key: "", rubric: "", marks: "", expected_length: "" }]);
     setEditingAssessmentId(null);
   };
-
 
   const createNewAssessment = () => {
     const hasData = title.trim() || questions.some((q) => q.question?.trim());
@@ -254,14 +406,12 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-
   const addQuestionCard = (index) => {
     const newQuestion = { question_id: "", question: "", answer_key: "", rubric: "", marks: "", expected_length: "" };
     const updated = [...questions];
     updated.splice(index + 1, 0, newQuestion);
     setQuestions(updated);
   };
-
 
   const deleteQuestion = (index) => {
     if (questions.length === 1) {
@@ -272,13 +422,11 @@ export default function Home() {
     setQuestions(updated);
   };
 
-
   const openDialog = (index) => {
     setDialogIndex(index);
     setDialogData({ ...questions[index] });
     setDialogOpen(true);
   };
-
 
   const saveDialog = () => {
     const q = dialogData;
@@ -299,7 +447,6 @@ export default function Home() {
     toast.success(`Q${qNum} saved`);
   };
 
-
   const buildPayload = (status) => ({
     title, subjectCode, subjectName, examDate, duration, instructions,
     departments: selectedDepartments.map((d) => d.value),
@@ -310,7 +457,6 @@ export default function Home() {
     status,
     faculty_email: localStorage.getItem("userEmail")
   });
-
 
   const validateFields = () => {
     if (!title.trim()) { toast.error("Fill assessment title"); return false; }
@@ -339,7 +485,6 @@ export default function Home() {
     return true;
   };
 
-
   const saveAssessment = async () => {
     if (!validateFields()) return;
     try {
@@ -362,7 +507,6 @@ export default function Home() {
       setSaving(false);
     }
   };
-
 
   const publishAssessment = async () => {
     if (!validateFields()) return;
@@ -387,7 +531,6 @@ export default function Home() {
     }
   };
 
-
   if (checkingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-100">
@@ -400,6 +543,9 @@ export default function Home() {
     );
   }
 
+  const currentAssessment = savedAssessments.find(
+    (a) => a._id === selectedAssessmentId || String(a._id) === String(selectedAssessmentId)
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-slate-200 text-gray-900 flex">
@@ -466,7 +612,6 @@ export default function Home() {
               </div>
             </div>
           )}
-
 
           {/* CREATE ASSESSMENT */}
           {activeSection === "Create Assessment" && (
@@ -650,9 +795,15 @@ export default function Home() {
                         <button
                           onClick={() => deleteQuestion(index)}
                           title="Delete this question"
-                          className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-red-500 hover:text-white text-slate-600 flex items-center justify-center transition font-bold text-lg flex-shrink-0"
+                          className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-red-500 hover:text-white text-slate-600 flex items-center justify-center transition flex-shrink-0"
                         >
-                          Ã
+                          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                            <path d="M10 11v6" />
+                            <path d="M14 11v6" />
+                            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                          </svg>
                         </button>
                       </div>
                     );
@@ -678,7 +829,6 @@ export default function Home() {
             </div>
           )}
 
-
           {/* QUESTION DIALOG */}
           {dialogOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -694,9 +844,12 @@ export default function Home() {
                   </div>
                   <button
                     onClick={() => setDialogOpen(false)}
-                    className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 text-xl font-bold transition"
+                    className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition"
                   >
-                    Ã
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
                   </button>
                 </div>
 
@@ -735,7 +888,7 @@ export default function Home() {
 
                 <div className="grid grid-cols-2 gap-5 mb-8">
                   <div>
-                    <label className="block text-sm font-semibold text-slate-600 mb-2">Marks</label>
+                    <label className="block text-sm font-semibold text-slate-600 mb-2">Marks (1-100)</label>
                     <input
                       type="number"
                       min="1"
@@ -783,7 +936,6 @@ export default function Home() {
             </div>
           )}
 
-
           {/* SEARCH BAR */}
           {(activeSection === "Drafts" || activeSection === "Published") && (
             <div className="mb-8">
@@ -796,7 +948,6 @@ export default function Home() {
               />
             </div>
           )}
-
 
           {/* DRAFTS */}
           {activeSection === "Drafts" && (
@@ -831,7 +982,6 @@ export default function Home() {
               </div>
             </div>
           )}
-
 
           {/* PUBLISHED */}
           {activeSection === "Published" && (
@@ -869,7 +1019,6 @@ export default function Home() {
             </div>
           )}
 
-
           {/* ANALYTICS */}
           {activeSection === "Analytics" && (
             <div className="space-y-8">
@@ -877,96 +1026,133 @@ export default function Home() {
             </div>
           )}
 
-
           {/* SUBMISSIONS */}
           {activeSection === "Submissions" && (
             <div>
-              <div className="mb-8">
-                <h2 className="text-4xl font-bold text-slate-900 mb-3">Student Submissions</h2>
-                <p className="text-slate-500 text-lg">Assessment ID: {selectedAssessmentId}</p>
+              {/* HEADER + MODULE 8 ACTION BUTTONS */}
+              <div className="mb-8 flex items-start justify-between flex-wrap gap-4">
+                <div>
+                  <h2 className="text-4xl font-bold text-slate-900 mb-3">Student Submissions</h2>
+                  <p className="text-slate-500 text-lg">
+                    Assessment: {currentAssessment?.title || ""}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  {/* EXPORT CSV — Module 8 */}
+                  <button
+                    onClick={exportCSV}
+                    disabled={exportingCSV || assessmentSubmissions.length === 0}
+                    className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold px-4 py-2.5 rounded-2xl text-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    {exportingCSV ? "Exporting..." : "Export CSV"}
+                  </button>
+
+                  {/* EXPORT HTML MARKSHEET — Module 8 */}
+                  <button
+                    onClick={exportHTMLMarksheet}
+                    disabled={exportingHTML || assessmentSubmissions.length === 0}
+                    className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold px-4 py-2.5 rounded-2xl text-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                      <line x1="16" y1="13" x2="8" y2="13" />
+                      <line x1="16" y1="17" x2="8" y2="17" />
+                    </svg>
+                    {exportingHTML ? "Exporting..." : "Export Marksheet"}
+                  </button>
+
+                  {/* PUBLISH RESULTS — Module 8 */}
+                  {currentAssessment?.results_published ? (
+                    <div className="bg-green-100 text-green-700 font-semibold px-5 py-2.5 rounded-2xl border border-green-200 text-sm flex items-center gap-2">
+                      ✓ Results Published
+                    </div>
+                  ) : (
+                    <button
+                      onClick={publishResults}
+                      disabled={publishingResults}
+                      className="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2.5 rounded-2xl transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {publishingResults ? "Publishing..." : "Publish Results"}
+                    </button>
+                  )}
+                </div>
               </div>
+
               {loadingSubmissions ? (
                 <div className="bg-white rounded-3xl p-8">Loading submissions...</div>
               ) : (
-                <>
-                  <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
-                    <table className="w-full">
-                      <thead className="bg-slate-100">
-                        <tr>
-                          <th className="p-4 text-left">Student ID</th>
-                          <th className="p-4 text-left">Email</th>
-                          <th className="p-4 text-left">Status</th>
-                          <th className="p-4 text-left">Final Marks</th>
-                          <th className="p-4 text-left">View</th>
-                          <th className="p-4 text-left">Evaluate</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {assessmentSubmissions.map((submission) => (
-                          <tr key={submission.submission_id} className="border-t">
-                            <td className="p-4">{submission.student_id}</td>
-                            <td className="p-4">{submission.student_email}</td>
-                            <td className="p-4">{submission.status}</td>
-                            <td className="p-4 font-semibold text-[#071330]">
-                              {submission.final_marks > 0 ? Math.round(submission.final_marks) : "-"}
-                            </td>
-                            <td className="p-4">
-                              <button
-                          
-onClick={() => {
-    if (submission.status !== "Evaluated" && submission.status !== "Finalized") {
-        toast("Evaluation not yet done. AI marks will show as pending.", {
-            icon: "⚠️",
-            duration: 3000,
-        });
-    }
-    localStorage.setItem("selectedAssessmentId", selectedAssessmentId);
-    router.push(`/assessment-review/${submission.submission_id}`);
-}}
-                                className="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg"
-                              >
-                                View
-                              </button>
-                            </td>
-                            <td className="p-4">
-                              <button
-                                disabled={
-                                  (submission.status === "Evaluated" || submission.status === "Finalized") ||
-                                  evaluatingSubmission === submission.submission_id
+                <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-slate-100">
+                      <tr>
+                        <th className="p-4 text-left">Student ID</th>
+                        <th className="p-4 text-left">Email</th>
+                        <th className="p-4 text-left">Status</th>
+                        <th className="p-4 text-left">Final Marks</th>
+                        <th className="p-4 text-left">View</th>
+                        <th className="p-4 text-left">Evaluate</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {assessmentSubmissions.map((submission) => (
+                        <tr key={submission.submission_id} className="border-t">
+                          <td className="p-4">{submission.student_id}</td>
+                          <td className="p-4">{submission.student_email}</td>
+                          <td className="p-4">{submission.status}</td>
+                          <td className="p-4 font-semibold text-[#071330]">
+                            {submission.final_marks > 0 ? Math.round(submission.final_marks) : "-"}
+                          </td>
+                          <td className="p-4">
+                            <button
+                              onClick={() => {
+                                if (submission.status !== "Evaluated" && submission.status !== "Finalized") {
+                                  toast("Evaluation not yet done. AI marks will show as pending.", {
+                                    icon: "⚠️",
+                                    duration: 3000,
+                                  });
                                 }
-                                onClick={() => evaluateSubmission(submission.submission_id)}
-                                className={`px-4 py-2 rounded-lg text-white ${
-                                  (submission.status === "Evaluated" || submission.status === "Finalized")
-                                    ? "bg-green-600 cursor-not-allowed"
-                                    : evaluatingSubmission === submission.submission_id
-                                    ? "bg-blue-400 cursor-not-allowed"
-                                    : "bg-blue-600 hover:bg-blue-700"
-                                }`}
-                              >
-                                {evaluatingSubmission === submission.submission_id
-                                  ? "Evaluating..."
-                                  : (submission.status === "Evaluated" || submission.status === "Finalized")
-                                    ? "Evaluated"
-                                    : "Evaluate"}
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  {showSubmissionDetails && (
-                    <div className="mt-8 bg-white p-6 rounded-3xl shadow">
-                      <h2 className="text-2xl font-bold mb-6">Submission Details</h2>
-                      {submissionDetails.map((item, index) => (
-                        <div key={index} className="mb-6 border-b pb-4">
-                          <h3 className="font-bold mb-2">Question {item.question_id}</h3>
-                          <p className="text-slate-700 whitespace-pre-wrap">{item.answer}</p>
-                        </div>
+                                localStorage.setItem("selectedAssessmentId", selectedAssessmentId);
+                                router.push(`/assessment-review/${submission.submission_id}`);
+                              }}
+                              className="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg"
+                            >
+                              View
+                            </button>
+                          </td>
+                          <td className="p-4">
+                            <button
+                              disabled={
+                                (submission.status === "Evaluated" || submission.status === "Finalized") ||
+                                evaluatingSubmission === submission.submission_id
+                              }
+                              onClick={() => evaluateSubmission(submission.submission_id)}
+                              className={`px-4 py-2 rounded-lg text-white ${
+                                (submission.status === "Evaluated" || submission.status === "Finalized")
+                                  ? "bg-green-600 cursor-not-allowed"
+                                  : evaluatingSubmission === submission.submission_id
+                                  ? "bg-blue-400 cursor-not-allowed"
+                                  : "bg-blue-600 hover:bg-blue-700"
+                              }`}
+                            >
+                              {evaluatingSubmission === submission.submission_id
+                                ? "Evaluating..."
+                                : (submission.status === "Evaluated" || submission.status === "Finalized")
+                                  ? "Evaluated"
+                                  : "Evaluate"}
+                            </button>
+                          </td>
+                        </tr>
                       ))}
-                    </div>
-                  )}
-                </>
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           )}

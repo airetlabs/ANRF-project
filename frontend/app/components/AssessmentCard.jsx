@@ -29,6 +29,7 @@ export default function AssessmentCard({
   const availableTo = assessment.availableTo ? new Date(assessment.availableTo) : null;
   const isPublished = assessment.status === "Published";
   const isExpired = isPublished && availableTo && now > availableTo;
+  const resultsPublished = !!assessment.results_published;
 
   const statusLabel = isExpired ? "Expired" : isPublished ? "Live" : "Draft";
   const statusColors = isExpired
@@ -117,6 +118,19 @@ export default function AssessmentCard({
             <span className={`w-2 h-2 rounded-full ${dotColors}`} />
             {statusLabel}
           </span>
+
+          {/* RESULTS PUBLISHED BADGE — only meaningful for published assessments */}
+          {isPublished && (
+            resultsPublished ? (
+              <span className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-semibold bg-blue-100 text-blue-700">
+                ✓ Results Published
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-semibold bg-slate-100 text-slate-500">
+                Results Pending
+              </span>
+            )
+          )}
         </div>
 
         <h2 className="text-2xl font-bold text-slate-900 leading-snug mb-4">

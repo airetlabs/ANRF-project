@@ -15,6 +15,7 @@ export default function StudentResultPage() {
     const [loading, setLoading] = useState(true);
     const [notPublished, setNotPublished] = useState(false);
     const [expandedFeedback, setExpandedFeedback] = useState({});
+    const [downloading, setDownloading] = useState(false);
 
     const submissionId = params?.submissionId;
 
@@ -71,6 +72,139 @@ export default function StudentResultPage() {
         return Number(q.marks) !== aiTotal;
     };
 
+    // ───────────────────────── MODULE 8: DOWNLOAD REPORT ─────────────────────────
+    const downloadReport = () => {
+        if (!result) return;
+        try {
+            setDownloading(true);
+
+            const escapeHtml = (str) =>
+                String(str ?? "").replace(/[&<>"']/g, (c) => ({
+                    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+                }[c]));
+
+            const maxTotal = result.questions?.reduce((t, q) => t + (q.max_marks || 0), 0) || 0;
+            const pct = maxTotal > 0 ? Math.round((result.total_marks / maxTotal) * 100) : 0;
+            const pctColor = pct >= 75 ? "#16a34a" : pct >= 50 ? "#ca8a04" : "#dc2626";
+
+            const questionBlocks = (result.questions || []).map((q, idx) => {
+                const scoreColor =
+                    q.max_marks > 0 && (q.marks / q.max_marks) * 100 >= 75 ? "#16a34a" :
+                    q.max_marks > 0 && (q.marks / q.max_marks) * 100 >= 50 ? "#ca8a04" : "#dc2626";
+
+                const rubricRows = (q.labels_json || []).map((item) => {
+                    const l = item.label?.toLowerCase();
+                    const style =
+                        l === "matched" ? "background:#dcfce7;color:#15803d" :
+                        (l === "contradicting" || l === "contradicted") ? "background:#fee2e2;color:#b91c1c" :
+                        (l === "partial" || l === "partially matched") ? "background:#dbeafe;color:#1d4ed8" :
+                        "background:#f1f5f9;color:#64748b";
+                    return `
+                    <tr>
+                      <td style="border:1px solid #e2e8f0;padding:10px 14px;color:#334155">${escapeHtml(item.faculty_rubric_statement)}</td>
+                      <td style="border:1px solid #e2e8f0;padding:10px 14px;text-align:center">
+                        <span style="padding:3px 10px;border-radius:14px;font-size:11px;font-weight:600;${style}">${escapeHtml(item.label)}</span>
+                      </td>
+                      <td style="border:1px solid #e2e8f0;padding:10px 14px;text-align:center;font-weight:600;color:#475569">${escapeHtml(item.total_marks)}</td>
+                    </tr>`;
+                }).join("");
+
+                return `
+                <div style="border:1px solid #e2e8f0;border-radius:16px;margin-bottom:20px;overflow:hidden">
+                  <div style="background:#f8fafc;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0">
+                    <span style="font-weight:700;color:#0f172a;font-size:15px">Question ${idx + 1}</span>
+                    <span style="font-weight:700;font-size:15px;color:${scoreColor}">${escapeHtml(q.marks)} / ${escapeHtml(q.max_marks)} marks</span>
+                  </div>
+                  <div style="padding:20px 24px">
+                    <p style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">Question</p>
+                    <p style="color:#1e293b;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 16px;margin-bottom:16px;line-height:1.6">${escapeHtml(q.question)}</p>
+
+                    <p style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">Your Answer</p>
+                    <p style="color:#334155;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 16px;margin-bottom:${rubricRows ? "16px" : "0"};white-space:pre-wrap;line-height:1.6">${q.student_answer ? escapeHtml(q.student_answer) : '<span style="color:#94a3b8;font-style:italic">No answer submitted</span>'}</p>
+
+                    ${rubricRows ? `
+                    <p style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Rubric Feedback</p>
+                    <table style="width:100%;border-collapse:collapse;font-size:13px">
+                      <thead>
+                        <tr style="background:#f1f5f9">
+                          <th style="border:1px solid #e2e8f0;padding:10px 14px;text-align:left;color:#64748b;font-size:11px;text-transform:uppercase">Rubric Point</th>
+                          <th style="border:1px solid #e2e8f0;padding:10px 14px;text-align:center;color:#64748b;font-size:11px;text-transform:uppercase;width:120px">Status</th>
+                          <th style="border:1px solid #e2e8f0;padding:10px 14px;text-align:center;color:#64748b;font-size:11px;text-transform:uppercase;width:90px">Marks</th>
+                        </tr>
+                      </thead>
+                      <tbody>${rubricRows}</tbody>
+                    </table>` : ""}
+                  </div>
+                </div>`;
+            }).join("");
+
+            const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Result Report - ${escapeHtml(result.assessment_title)}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f1f5f9; }
+  @media print {
+    body { background: #fff; }
+    .no-print { display: none !important; }
+    .page { box-shadow: none !important; margin: 0 !important; border-radius: 0 !important; }
+  }
+</style>
+</head>
+<body>
+  <div class="no-print" style="background:#1e293b;color:#fff;padding:12px 24px;display:flex;justify-content:space-between;align-items:center">
+    <span style="font-weight:600">AcadAIsist — Student Result Report</span>
+    <button onclick="window.print()" style="background:#3b82f6;color:#fff;border:none;padding:8px 20px;border-radius:8px;font-weight:600;cursor:pointer">Print / Save as PDF</button>
+  </div>
+
+  <div class="page" style="max-width:880px;margin:32px auto;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)">
+
+    <div style="background:#0f172a;padding:36px 40px">
+      <p style="color:#94a3b8;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Assessment Result Report</p>
+      <h1 style="color:#fff;font-size:24px;font-weight:800;margin-bottom:20px">${escapeHtml(result.assessment_title)}</h1>
+      <div style="display:flex;gap:20px;flex-wrap:wrap">
+        <div style="background:rgba(255,255,255,0.08);border-radius:12px;padding:14px 24px;text-align:center">
+          <p style="color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">Final Score</p>
+          <p style="color:#fff;font-size:26px;font-weight:800">${escapeHtml(result.total_marks)}<span style="font-size:15px;color:#94a3b8;font-weight:400"> / ${maxTotal}</span></p>
+        </div>
+        <div style="background:rgba(255,255,255,0.08);border-radius:12px;padding:14px 24px;text-align:center">
+          <p style="color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">Percentage</p>
+          <p style="font-size:26px;font-weight:800;color:${pctColor}">${pct}%</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:32px 40px">
+      ${questionBlocks}
+    </div>
+
+    <div style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:20px 40px;display:flex;justify-content:space-between;align-items:center">
+      <p style="font-size:12px;color:#94a3b8">Generated by AcadAIsist • AI-Assisted Academic Evaluation</p>
+      <p style="font-size:12px;color:#94a3b8">Generated on ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+            const blob = new Blob([html], { type: "text/html" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            const safeTitle = (result.assessment_title || "result").replace(/[^a-zA-Z0-9-_]/g, "_");
+            a.download = `${safeTitle}_report.html`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setDownloading(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-slate-100">
@@ -122,13 +256,29 @@ export default function StudentResultPage() {
         <div className="min-h-screen bg-slate-100 p-6">
             <div className="max-w-4xl mx-auto">
 
-                {/* BACK */}
-                <button
-                    onClick={() => router.push("/student/dashboard")}
-                    className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6 font-medium"
-                >
-                    <span>&#8592;</span> Back to Dashboard
-                </button>
+                {/* BACK + DOWNLOAD */}
+                <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+                    <button
+                        onClick={() => router.push("/student/dashboard")}
+                        className="flex items-center gap-2 text-slate-600 hover:text-slate-900 font-medium"
+                    >
+                        <span>&#8592;</span> Back to Dashboard
+                    </button>
+
+                    {/* DOWNLOAD REPORT — Module 8 */}
+                    <button
+                        onClick={downloadReport}
+                        disabled={downloading}
+                        className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold px-4 py-2.5 rounded-2xl text-sm transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        {downloading ? "Preparing..." : "Download Report"}
+                    </button>
+                </div>
 
                 {/* HEADER CARD */}
                 <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8 mb-6">
