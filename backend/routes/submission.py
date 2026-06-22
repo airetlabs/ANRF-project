@@ -482,10 +482,12 @@ def student_result(submission_id: str):
             }
         )
 
+        ai_marks = evaluation.get("suggested_marks", 0) if evaluation else 0
+        faculty_adjusted = correction is not None and float(correction.get("faculty_marks", ai_marks)) != float(ai_marks)
         marks = (
             correction.get("faculty_marks", 0)
             if correction
-            else evaluation.get("suggested_marks", 0)
+            else ai_marks
             if evaluation
             else 0
         )
@@ -522,6 +524,8 @@ def student_result(submission_id: str):
             "question": question.get("question_text", ""),
             "student_answer": answer["answer_text"] if answer else "",
             "marks": marks,
+            "ai_marks": ai_marks,
+            "faculty_adjusted": faculty_adjusted,
             "max_marks": question.get("max_marks", 0),
             "feedback": feedback,
             "labels_json": labels_json,

@@ -60,16 +60,8 @@ export default function StudentResultPage() {
         return "text-red-500";
     };
 
-    const getAITotalFromLabels = (labels_json) => {
-        if (!labels_json?.length) return null;
-        return labels_json.reduce((sum, item) => sum + Number(item.total_marks || 0), 0);
-    };
-
-    const isFacultyOverridden = (q) => {
-        const aiTotal = getAITotalFromLabels(q.labels_json);
-        if (aiTotal === null) return false;
-        return Number(q.marks) !== aiTotal;
-    };
+    // Use real values from backend — no recomputation needed
+    const isFacultyOverridden = (q) => q.faculty_adjusted === true;
 
     const downloadReport = () => {
         if (!result) return;
@@ -312,7 +304,6 @@ export default function StudentResultPage() {
                         const hasLabels = q.labels_json?.length > 0;
                         const isExpanded = expandedFeedback[index];
                         const facultyOverridden = isFacultyOverridden(q);
-                        const aiTotalFromLabels = getAITotalFromLabels(q.labels_json);
 
                         const matchedCount = q.labels_json?.filter(l => l.label?.toLowerCase() === "matched").length || 0;
                         const contradictedCount = q.labels_json?.filter(l => ["contradicting", "contradicted"].includes(l.label?.toLowerCase())).length || 0;
@@ -330,7 +321,7 @@ export default function StudentResultPage() {
                                         </div>
                                         {facultyOverridden && (
                                             <div className="text-xs text-slate-400 mt-0.5">
-                                                AI suggested: {aiTotalFromLabels} &rarr; Faculty awarded: {q.marks}
+                                                AI suggested: {q.ai_marks} &rarr; Faculty awarded: {q.marks}
                                             </div>
                                         )}
                                     </div>
@@ -385,7 +376,7 @@ export default function StudentResultPage() {
                                                     {facultyOverridden && (
                                                         <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 text-xs text-amber-700 font-medium">
                                                             &#9432; Your faculty reviewed and adjusted the marks for this question.
-                                                            AI suggested <strong>{aiTotalFromLabels}</strong> based on rubric matching,
+                                                            AI suggested <strong>{q.ai_marks}</strong> based on rubric matching,
                                                             but your final awarded mark is <strong>{q.marks}</strong>.
                                                         </div>
                                                     )}
