@@ -20,7 +20,11 @@ export default function StudentResultPage() {
         if (!r.ok) throw new Error("Failed to fetch result");
         return r.json();
       })
-      .then((data) => { if (data) setResult(data); })
+      .then((data) => {
+        if (!data) return;
+        if (data.results_published === false) { setNotPublished(true); return; }
+        setResult(data);
+      })
       .catch(() => setNotPublished(true))
       .finally(() => setLoading(false));
   }, [submissionId]);
