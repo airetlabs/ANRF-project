@@ -201,6 +201,16 @@ export default function Home() {
   // ───────────────────────── MODULE 8: EXPORT CSV ─────────────────────────
   const exportCSV = async () => {
     if (!selectedAssessmentId) return;
+
+    const allEvaluatedForCSV =
+      assessmentSubmissions.length > 0 &&
+      assessmentSubmissions.every((s) => s.status === "Evaluated" || s.status === "Finalized");
+
+    if (!allEvaluatedForCSV) {
+      toast.error("Please evaluate all submissions before exporting CSV.");
+      return;
+    }
+
     try {
       setExportingCSV(true);
       const response = await fetch(`${API_URL}/submission/export-csv/${selectedAssessmentId}`);
@@ -546,6 +556,11 @@ export default function Home() {
   const currentAssessment = savedAssessments.find(
     (a) => a._id === selectedAssessmentId || String(a._id) === String(selectedAssessmentId)
   );
+
+  // Module 8: CSV export (and Publish Results) require every submission to be evaluated/finalized first
+  const allSubmissionsEvaluated =
+    assessmentSubmissions.length > 0 &&
+    assessmentSubmissions.every((s) => s.status === "Evaluated" || s.status === "Finalized");
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-slate-200 text-gray-900 flex">
@@ -1039,10 +1054,15 @@ export default function Home() {
                 </div>
 
                 <div className="flex flex-wrap gap-3">
-                  {/* EXPORT CSV — Module 8 */}
+                  {/* EXPORT CSV — Module 8 (enabled only once all submissions are evaluated) */}
                   <button
                     onClick={exportCSV}
-                    disabled={exportingCSV || assessmentSubmissions.length === 0}
+                    disabled={exportingCSV || !allSubmissionsEvaluated}
+                    title={
+                      !allSubmissionsEvaluated
+                        ? "Evaluate all submissions before exporting CSV"
+                        : "Export marks as CSV"
+                    }
                     className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold px-4 py-2.5 rounded-2xl text-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

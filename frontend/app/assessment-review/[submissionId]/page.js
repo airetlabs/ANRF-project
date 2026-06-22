@@ -258,7 +258,15 @@ export default function AssessmentReviewPage() {
 
                                         {hasFeedback && (
                                             <button
-                                                onClick={() => setSelectedFeedback({ items: q.labels_json, ai_marks: facultyMarks[q.question_id] ?? q.ai_marks })}
+                                                onClick={() =>
+                                                    setSelectedFeedback({
+                                                        items: q.labels_json,
+                                                        // FIX: always show the TRUE, untouched AI marks here —
+                                                        // never the faculty-edited value. Faculty's own edit is
+                                                        // already shown separately as "Faculty Marks" above.
+                                                        ai_marks: q.ai_marks
+                                                    })
+                                                }
                                                 className="ml-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
                                             >
                                                 Feedback
@@ -307,9 +315,9 @@ export default function AssessmentReviewPage() {
                                 <div className="flex justify-between items-center border-b px-6 py-4">
                                     <div>
                                         <h2 className="text-xl font-bold text-slate-900">Rubric Feedback</h2>
-                                        {/* FIX: show total from feedback rows = matches AI Marks */}
+                                        {/* Always shows the true AI marks now — independent of any faculty edit */}
                                         <p className="text-sm text-slate-500 mt-1">
-                                            Total Awarded:{" "}
+                                            Rubric Total:{" "}
                                             <span className="font-bold text-green-600">
                                                 {getFeedbackTotal(selectedFeedback.items)}
                                             </span>
@@ -359,7 +367,7 @@ export default function AssessmentReviewPage() {
                                                 </tr>
                                             ))}
                                         </tbody>
-                                        {/* FIX: footer row showing sum = AI marks */}
+                                        {/* Footer row showing sum = AI marks (both now from the same source of truth) */}
                                         <tfoot>
                                             <tr className="bg-slate-50 font-bold">
                                                 <td className="border p-3 text-right text-slate-700" colSpan={2}>
