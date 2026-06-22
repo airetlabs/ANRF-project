@@ -82,11 +82,18 @@ export default function QuestionCard({
           >
             +
           </button>
+          {/* FIX: use SVG icon instead of character to avoid encoding issues */}
           <button
             onClick={(e) => { e.stopPropagation(); deleteQuestion(index); }}
-            className="w-9 h-9 rounded-xl bg-white border border-slate-200 hover:bg-red-50 hover:border-red-300 transition flex items-center justify-center text-lg"
+            className="w-9 h-9 rounded-xl bg-white border border-slate-200 hover:bg-red-50 hover:border-red-300 transition flex items-center justify-center"
           >
-            ×
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500">
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+              <path d="M10 11v6" />
+              <path d="M14 11v6" />
+              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+            </svg>
           </button>
         </div>
       </motion.div>
@@ -154,7 +161,8 @@ export default function QuestionCard({
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-600 mb-2">Marks (1100)</label>
+                  {/* FIX: use (1-100) instead of special dash character that caused encoding corruption */}
+                  <label className="block text-sm font-semibold text-slate-600 mb-2">Marks (1-100)</label>
                   <input
                     type="number"
                     placeholder="e.g. 10"

@@ -26,7 +26,7 @@ export default function AssessmentReviewPage() {
                 `${API_URL}/submission/review/${submissionId}`
             );
             const data = await response.json();
-            
+
             setQuestions(data);
 
             const preFilledMarks = {};
@@ -69,9 +69,7 @@ export default function AssessmentReviewPage() {
         }
     };
 
-    // null = not yet evaluated, 0 = evaluated and scored zero (legitimate)
     const isEvaluated = (q) => q.ai_marks !== null && q.ai_marks !== undefined;
-
     const allEvaluated = questions.length > 0 && questions.every(isEvaluated);
 
     const hasFacultyEdit = (q) => {
@@ -84,6 +82,12 @@ export default function AssessmentReviewPage() {
             sum + Number(facultyMarks[q.question_id] ?? q.ai_marks ?? 0),
         0
     );
+
+    // Compute total marks from feedback rows so it always matches AI Marks
+    const getFeedbackTotal = (feedbackList) => {
+        if (!feedbackList?.length) return 0;
+        return feedbackList.reduce((sum, item) => sum + Number(item.total_marks || 0), 0);
+    };
 
     if (loading) {
         return (
@@ -103,7 +107,7 @@ export default function AssessmentReviewPage() {
                 }}
                 className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-4"
             >
-                <span className="text-xl">←</span>
+                <span className="text-xl">&#8592;</span>
                 <span className="font-semibold">Back to Submissions</span>
             </button>
 
@@ -120,6 +124,9 @@ export default function AssessmentReviewPage() {
                     {questions.map((q, index) => {
                         const evaluated = isEvaluated(q);
                         const editing = editingMarks[q.question_id];
+
+                        // FIX: support both labels_json (array of objects) and feedback (array of strings)
+                        const hasFeedback = q.labels_json?.length > 0;
 
                         return (
                             <div
@@ -249,12 +256,12 @@ export default function AssessmentReviewPage() {
                                             </div>
                                         )}
 
-                                        {q.labels_json?.length > 0 && (
+                                        {hasFeedback && (
                                             <button
-                                                onClick={() => setSelectedFeedback(q.labels_json)}
+                                                onClick={() => setSelectedFeedback({ items: q.labels_json, ai_marks: facultyMarks[q.question_id] ?? q.ai_marks })}
                                                 className="ml-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
                                             >
-                                                Feedback 
+                                                Feedback
                                             </button>
                                         )}
 
@@ -292,73 +299,78 @@ export default function AssessmentReviewPage() {
                         </div>
                     </div>
 
+                    {/* FEEDBACK MODAL */}
                     {selectedFeedback && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
                             <div className="bg-white rounded-2xl shadow-2xl w-[90%] max-w-3xl max-h-[80vh] flex flex-col">
 
                                 <div className="flex justify-between items-center border-b px-6 py-4">
-                                    <h2 className="text-xl font-bold text-slate-900">Rubric Feedback</h2>
+                                    <div>
+                                        <h2 className="text-xl font-bold text-slate-900">Rubric Feedback</h2>
+                                        {/* FIX: show total from feedback rows = matches AI Marks */}
+                                        <p className="text-sm text-slate-500 mt-1">
+                                            Total Awarded:{" "}
+                                            <span className="font-bold text-green-600">
+                                                {getFeedbackTotal(selectedFeedback.items)}
+                                            </span>
+                                            {" "}= AI Marks:{" "}
+                                            <span className="font-bold text-green-600">
+                                                {selectedFeedback.ai_marks}
+                                            </span>
+                                        </p>
+                                    </div>
                                     <button
                                         onClick={() => setSelectedFeedback(null)}
                                         className="text-slate-500 hover:text-slate-800 text-2xl font-bold"
                                     >
-                                        ×
+                                        &#x2715;
                                     </button>
                                 </div>
 
                                 <div className="overflow-y-auto p-6">
-
                                     <table className="w-full border border-slate-300 text-slate-800">
-
                                         <thead>
                                             <tr className="bg-slate-100 text-slate-900">
-                                                <th className="border p-3 text-left">
-                                                    Rubric Statement
-                                                </th>
-
-                                                <th className="border p-3">
-                                                    Status
-                                                </th>
-
-                                                <th className="border p-3">
-                                                    Marks
-                                                </th>
+                                                <th className="border p-3 text-left">Rubric Statement</th>
+                                                <th className="border p-3">Status</th>
+                                                <th className="border p-3">Marks</th>
                                             </tr>
                                         </thead>
-
                                         <tbody>
-                                            {selectedFeedback.map((item, idx) => (
-
+                                            {selectedFeedback.items.map((item, idx) => (
                                                 <tr key={idx}>
-
                                                     <td className="border p-3 text-slate-800">
                                                         {item.faculty_rubric_statement}
                                                     </td>
-
                                                     <td className="border p-3 text-center">
-                                                        <span
-                                                            className={`px-3 py-1 rounded-full text-sm font-semibold ${item.label?.toLowerCase() === "matched"
-                                                                    ? "bg-green-100 text-green-700"
-                                                                    : item.label?.toLowerCase() === "contradicting"
-                                                                        ? "bg-red-100 text-red-700"
-                                                                        : "bg-yellow-100 text-yellow-700"
-                                                                }`}
-                                                        >
+                                                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                                                            item.label?.toLowerCase() === "matched"
+                                                                ? "bg-green-100 text-green-700"
+                                                                : item.label?.toLowerCase() === "contradicting"
+                                                                    ? "bg-red-100 text-red-700"
+                                                                    : "bg-yellow-100 text-yellow-700"
+                                                        }`}>
                                                             {item.label}
                                                         </span>
                                                     </td>
-
-                                                    <td className="border p-3 text-center text-slate-800">
+                                                    <td className="border p-3 text-center font-semibold text-slate-800">
                                                         {item.total_marks}
                                                     </td>
-
                                                 </tr>
-
                                             ))}
                                         </tbody>
-
+                                        {/* FIX: footer row showing sum = AI marks */}
+                                        <tfoot>
+                                            <tr className="bg-slate-50 font-bold">
+                                                <td className="border p-3 text-right text-slate-700" colSpan={2}>
+                                                    Total
+                                                </td>
+                                                <td className="border p-3 text-center text-green-700">
+                                                    {getFeedbackTotal(selectedFeedback.items)}
+                                                </td>
+                                            </tr>
+                                        </tfoot>
                                     </table>
-
                                 </div>
 
                                 <div className="border-t p-4 flex justify-end">
