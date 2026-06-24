@@ -1,7 +1,8 @@
 from fastapi import APIRouter
 from bson import ObjectId
 from datetime import datetime, timezone, timedelta
-
+from evaluation.technical_service import access_similarity_for_technical_evaluation
+from evaluation.rubric_service import accessing_faculty_input
 from database import db
 
 router = APIRouter()
@@ -11,7 +12,7 @@ IST = timezone(timedelta(hours=5, minutes=30))
 
 # CREATE / UPDATE ASSESSMENT
 @router.post("/create")
-def create_assessment(data: dict):
+async def create_assessment(data: dict):
 
     assessment_id = data.get("id")
 
@@ -53,7 +54,8 @@ def create_assessment(data: dict):
             "assessment_id": assessment_id_str,
             "rubric_text": q["rubric"],
         })
-
+        await accessing_faculty_input(qid,assessment_id_str)
+        await access_similarity_for_technical_evaluation(qid,assessment_id_str)
     return {
         "message": "Assessment Created Successfully",
         "id": str(result.inserted_id)

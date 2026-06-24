@@ -1,12 +1,7 @@
 "use client";
-<<<<<<< HEAD
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-import { useEffect, useState } from "react";
-=======
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://anrf-project-production-a47a.up.railway.app";
 
 import { useEffect, useState, useRef } from "react";
->>>>>>> origin/main-branch
 import { useParams, useRouter } from "next/navigation";
 
 export default function StudentAssessmentPage() {

@@ -6,11 +6,16 @@ from database import db
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from .slm import model
+from .limiter import limiter
 from .schemas.validators import Technical_terms
+import time
+import asyncio
+from groq import RateLimitError
+from pydantic import ValidationError
 out = StrOutputParser()
 
 
-def technical_terms_extraction(faculty_rubrics, faculy_ans):
+async def technical_terms_extraction(faculty_rubrics, faculy_ans):
     json_format_example = [
         {
             "technical_term": "TERM1",
@@ -25,45 +30,45 @@ def technical_terms_extraction(faculty_rubrics, faculy_ans):
     escaped_json_format_str = json_format_str.replace("{", "{{").replace("}", "}}")
 
     model_technical_verification_instruction = f"""
-  # Role
-  You are an academic evaluator.
+  You are an academic concept extractor. Your sole task is to analyze a faculty rubric point and its model answer, then extract weighted keywords for automated student response evaluation.
 
-  # Input
-  - Faculty Rubric
-  - Faculty Answer
+## Extraction Rules
 
-  # Task
-  For each rubric point:
+Extract ONLY:
+- Technical terms (single words preferred)
+- Domain-specific keyphrases (2–3 words max)
+- Conceptual identifiers essential to the rubric point
 
-  1. Identify the key concepts from the faculty answer that are essential for satisfying that rubric point.
 
-  2. Extract only:
-    - Technical terms(Preferably single words)
-    - Conceptual phrases
-    - Domain-specific keywords
+Exclude:
+- Articles, prepositions, conjunctions
+- Generic academic phrases
+- Redundant synonyms (keep the most precise form only)
+- Avoid broad topic words that would appear in both correct and incorrect answers.
 
-  3. Do NOT extract:
-    - Generic filler words
-    - Connecting words
-    - Repeated terms unless necessary
+## Weighting Scale
 
-  4. Assign an importance weight from 1 to 5 for each extracted concept:
+| Weight | Meaning |
+|--------|---------|
+| 5      | Mandatory — absence signals wrong or missing answer |
+| 4      | Strongly expected — presence significantly boosts match confidence |
+| 3      | Supporting — distinguishes a partial answer from a wrong one |
 
-  5 = Critical concept; must be present for strong match
-  4 = Highly important supporting concept
-  3 = Important but not mandatory
-  2 = Minor supporting detail
-  1 = Low importance supplementary term
+## Keyword Constraints
 
-  # Output Rules
-  - Output ONLY valid JSON
-  - No explanations
-  - No markdown
-  - No extra text
+- Extract between 5 and 7 keywords total.
+- Weight-5 and weight-4 terms must make up at least 60% of the output.
+- Assign weight 3 only when the concept meaningfully separates a partial answer from an incorrect one.
 
-  The JSON must strictly follow this format:
-  {escaped_json_format_str}
+## Output Contract
+
+- Valid JSON only
+- No preamble, explanation, or markdown fences
+- Strictly follow this schema:
+
+{escaped_json_format_str}
   """
+    
 
     faculty_rubrics_json_str = json.dumps(faculty_rubrics, indent=2)
     escaped_faculty_rubrics_json_str = faculty_rubrics_json_str.replace("{", "{{").replace("}", "}}")
@@ -74,14 +79,34 @@ def technical_terms_extraction(faculty_rubrics, faculy_ans):
                                     "faculty_ans":{faculy_ans}"""}
     ])
     chain = prompt | model | out
-    response = chain.invoke({})
-    response = json.loads(response)
-    technical_terms = [Technical_terms(**term) for term in response]
-    dict_data = [obj.model_dump() for obj in technical_terms]
-    return dict_data
+    while True:
+        try:
+            await limiter.acquire()
+            response = await chain.ainvoke({})
+            break
+        except RateLimitError:
+          await asyncio.sleep(7)
+            # time.sleep(7)
+
+    retries = 3
+    for i in range(retries):
+        try:
+            response = json.loads(response)
+            technical_terms = [Technical_terms(**term) for term in response]
+            dict_data = [obj.model_dump() for obj in technical_terms]
+            return dict_data
+        except ValidationError as e:
+            print(f"Pydantic validation error in technical_terms_extraction: {e}. Retrying... ({i+1}/{retries})")
+            await asyncio.sleep(2)
+            # time.sleep(2)
+        except json.JSONDecodeError as e:
+            print(f"JSON Decode Error in technical_terms_extraction: {e}. Retrying... ({i+1}/{retries})")
+            await asyncio.sleep(2)
+            # time.sleep(2)
+    raise ValueError("Failed Pydantic or JSON validation in technical_terms_extraction after multiple retries.")
 
 
-def access_similarity_for_technical_evaluation(question_id, assessment_id):
+async def access_similarity_for_technical_evaluation(question_id, assessment_id):
     # FIX — filter by assessment_id too
     rubric_doc = db.Rubric.find_one({
         "question_id": question_id,
@@ -106,7 +131,7 @@ def access_similarity_for_technical_evaluation(question_id, assessment_id):
     try:
         if atomic_rubric is not None:
             
-            technical_terms_json = technical_terms_extraction(atomic_rubric, faculty_ans)
+            technical_terms_json =await technical_terms_extraction(atomic_rubric, faculty_ans)
             db.Rubric.update_one(
             {"question_id": question_id, "assessment_id": assessment_id},
             {"$set": {"technical_terms": technical_terms_json}},
