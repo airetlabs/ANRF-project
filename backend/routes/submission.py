@@ -3,12 +3,13 @@ import json
 from fastapi.responses import StreamingResponse
 import csv
 from io import StringIO
-
+import time
+import asyncio
 from fastapi import APIRouter, HTTPException
 from bson import ObjectId
 from datetime import datetime
 from database import db
-from evaluation.pipeline import evaluate_pipeline
+from evaluation.pipeline import evaluate_pipeline,main
 
 logger = logging.getLogger(__name__)
 
@@ -289,7 +290,7 @@ def review_submission(submission_id: str):
 
 # EVALUATE SUBMISSION — runs ML pipeline
 @router.post("/evaluate/{submission_id}")
-def evaluate_submission(submission_id: str):
+async def evaluate_submission(submission_id: str):
     try:
         submission = db.StudentSubmission.find_one(
             {"_id": ObjectId(submission_id)}
@@ -300,6 +301,8 @@ def evaluate_submission(submission_id: str):
 
         assessment_id = submission["assessment_id"]
         student_id = submission["student_id"]
+        student_ids=list(db.StudentAnswer.find({"assessment_id":assessment_id}))
+        s_ids=[s["student_id"] for s in student_ids]
 
         questions = list(
             db.Question.find({"assessment_id": assessment_id})
@@ -338,12 +341,14 @@ def evaluate_submission(submission_id: str):
                     upsert=True
                 )
                 logger.info(f"Question {q['question_id']} has no answer — set ai_marks=0")
+        await main(question_ids,s_ids,assessment_id)
+            
 
-        scores = evaluate_pipeline(
-            student_id,
-            question_ids,
-            assessment_id
-        )
+        # scores = evaluate_pipeline(
+        #     student_id,
+        #     question_ids,
+        #     assessment_id
+        # )
 
         db.StudentSubmission.update_one(
             {"_id": ObjectId(submission_id)},
@@ -352,7 +357,7 @@ def evaluate_submission(submission_id: str):
 
         return {
             "message": "Evaluation Completed",
-            "scores": scores
+            # "scores": scores
         }
 
     except HTTPException:

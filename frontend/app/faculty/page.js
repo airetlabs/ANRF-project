@@ -38,7 +38,8 @@ export default function Home() {
     const [assessmentSubmissions, setAssessmentSubmissions] = useState([]);
     const [loadingSubmissions, setLoadingSubmissions] = useState(false);
     const [evaluatingSubmission, setEvaluatingSubmission] = useState(null);
-
+    const [exportingCSV, setExportingCSV] = useState(false);
+    const [exportingHTML, setExportingHTML] = useState(false);
     const [questions, setQuestions] = useState([
         {
             question_id: "",
@@ -203,8 +204,11 @@ export default function Home() {
     const fetchSubmissions = async (assessmentId) => {
         try {
             setLoadingSubmissions(true);
-            const response = await fetch(`${API_URL}/submission/assessment/${assessmentId}`);
-            const data = await response.json();
+            const [subRes] = await Promise.all([
+                fetch(`${API_URL}/submission/assessment/${assessmentId}`),
+                fetchAssessments()
+            ]);
+            const data = await subRes.json();
             setAssessmentSubmissions(data);
         } catch (error) {
             console.error(error);
@@ -252,14 +256,88 @@ export default function Home() {
     };
 
     const exportCSV = async () => {
+        if (!selectedAssessmentId) return;
+        const allEvaluatedForCSV =
+            assessmentSubmissions.length > 0 &&
+            assessmentSubmissions.every((s) => s.status === "Evaluated" || s.status === "Finalized");
+        if (!allEvaluatedForCSV) {
+            toast.error("Please evaluate all submissions before exporting CSV.");
+            return;
+        }
         try {
-            window.open(
-                `${API_URL}/submission/export-csv/${selectedAssessmentId}`,
-                "_blank"
-            );
+            setExportingCSV(true);
+            const response = await fetch(`${API_URL}/submission/export-csv/${selectedAssessmentId}`);
+            if (!response.ok) throw new Error();
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            const assessment = savedAssessments.find(a => String(a._id) === String(selectedAssessmentId));
+            const safeTitle = (assessment?.title || "assessment").replace(/[^a-zA-Z0-9-_]/g, "_");
+            a.download = `${safeTitle}_marks.csv`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            toast.success("CSV exported successfully");
         } catch (error) {
             console.error(error);
             toast.error("Failed to export CSV");
+        } finally {
+            setExportingCSV(false);
+        }
+    };
+
+    const exportHTMLMarksheet = () => {
+        if (!selectedAssessmentId || assessmentSubmissions.length === 0) return;
+        try {
+            setExportingHTML(true);
+            const assessment = savedAssessments.find(a => String(a._id) === String(selectedAssessmentId));
+            const assessmentTitle = assessment?.title || "Assessment";
+            const evaluatedCount = assessmentSubmissions.filter(s => s.status === "Finalized" || s.status === "Evaluated").length;
+            const pendingCount = assessmentSubmissions.length - evaluatedCount;
+            const scored = assessmentSubmissions.filter(s => s.final_marks > 0);
+            const avgMarks = scored.length > 0 ? Math.round(scored.reduce((sum, s) => sum + s.final_marks, 0) / scored.length) : 0;
+            const escapeHtml = (str) => String(str ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+            const rows = assessmentSubmissions.map((s, idx) => {
+                const statusStyle = s.status === "Finalized" ? "background:#dcfce7;color:#16a34a" : s.status === "Evaluated" ? "background:#dbeafe;color:#2563eb" : "background:#fef9c3;color:#92400e";
+                return `<tr style="${idx % 2 === 0 ? "background:#f8fafc" : "background:#fff"}">
+              <td style="border:1px solid #e2e8f0;padding:12px 16px;text-align:center;color:#64748b">${idx + 1}</td>
+              <td style="border:1px solid #e2e8f0;padding:12px 16px;font-weight:600;color:#0f172a">${escapeHtml(s.student_id)}</td>
+              <td style="border:1px solid #e2e8f0;padding:12px 16px;color:#334155">${escapeHtml(s.student_email)}</td>
+              <td style="border:1px solid #e2e8f0;padding:12px 16px;text-align:center"><span style="padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;${statusStyle}">${escapeHtml(s.status)}</span></td>
+              <td style="border:1px solid #e2e8f0;padding:12px 16px;text-align:center;font-weight:700;font-size:16px;color:${s.final_marks > 0 ? "#16a34a" : "#94a3b8"}">${s.final_marks > 0 ? Math.round(s.final_marks) : "—"}</td>
+            </tr>`;
+            }).join("");
+            const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><title>Marksheet - ${escapeHtml(assessmentTitle)}</title><style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8fafc;}@media print{body{background:#fff;}.no-print{display:none !important;}.page{box-shadow:none !important;margin:0 !important;border-radius:0 !important;}}</style></head><body>
+          <div class="no-print" style="background:#1e293b;color:#fff;padding:12px 24px;display:flex;justify-content:space-between;align-items:center"><span style="font-weight:600">AcadAIsist — Faculty Marksheet</span><button onclick="window.print()" style="background:#3b82f6;color:#fff;border:none;padding:8px 20px;border-radius:8px;font-weight:600;cursor:pointer">Print / Save as PDF</button></div>
+          <div class="page" style="max-width:960px;margin:32px auto;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)">
+            <div style="background:#0f172a;padding:36px 40px"><p style="color:#94a3b8;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Faculty Marksheet</p><h1 style="color:#fff;font-size:24px;font-weight:800;margin-bottom:20px">${escapeHtml(assessmentTitle)}</h1>
+              <div style="display:flex;gap:20px;flex-wrap:wrap">
+                <div style="background:rgba(255,255,255,0.08);border-radius:12px;padding:14px 20px;text-align:center"><p style="color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">Total Students</p><p style="color:#fff;font-size:24px;font-weight:800">${assessmentSubmissions.length}</p></div>
+                <div style="background:rgba(255,255,255,0.08);border-radius:12px;padding:14px 20px;text-align:center"><p style="color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">Evaluated</p><p style="color:#4ade80;font-size:24px;font-weight:800">${evaluatedCount}</p></div>
+                <div style="background:rgba(255,255,255,0.08);border-radius:12px;padding:14px 20px;text-align:center"><p style="color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">Pending</p><p style="color:#facc15;font-size:24px;font-weight:800">${pendingCount}</p></div>
+                <div style="background:rgba(255,255,255,0.08);border-radius:12px;padding:14px 20px;text-align:center"><p style="color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">Class Average</p><p style="color:#60a5fa;font-size:24px;font-weight:800">${avgMarks}</p></div>
+              </div>
+            </div>
+            <div style="padding:32px 40px"><table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr style="background:#f1f5f9"><th style="border:1px solid #e2e8f0;padding:12px 16px;text-align:center;color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:0.05em">#</th><th style="border:1px solid #e2e8f0;padding:12px 16px;text-align:left;color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:0.05em">Register No.</th><th style="border:1px solid #e2e8f0;padding:12px 16px;text-align:left;color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:0.05em">Email</th><th style="border:1px solid #e2e8f0;padding:12px 16px;text-align:center;color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:0.05em">Status</th><th style="border:1px solid #e2e8f0;padding:12px 16px;text-align:center;color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:0.05em">Final Marks</th></tr></thead><tbody>${rows}</tbody></table></div>
+            <div style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:20px 40px;display:flex;justify-content:space-between;align-items:center"><p style="font-size:12px;color:#94a3b8">Generated by AcadAIsist • AI-Assisted Academic Evaluation</p><p style="font-size:12px;color:#94a3b8">Generated on ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</p></div>
+          </div></body></html>`;
+            const blob = new Blob([html], { type: "text/html" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${assessmentTitle.replace(/[^a-zA-Z0-9-_]/g, "_")}_marksheet.html`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            toast.success("HTML marksheet exported");
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to export marksheet");
+        } finally {
+            setExportingHTML(false);
         }
     };
 
@@ -813,70 +891,53 @@ export default function Home() {
                                     </div>
 
                                     <p className="text-slate-500 text-lg">
-                                        Assessment ID: {selectedAssessmentId}
+                                        Assessment: {savedAssessments.find(a => String(a._id) === String(selectedAssessmentId))?.title || ""}
                                     </p>
                                 </div>
 
-                                {(() => {
-                                    const currentAssessment = savedAssessments.find(
-                                        a => a._id === selectedAssessmentId ||
-                                            String(a._id) === String(selectedAssessmentId)
-                                    );
+                                <div className="flex flex-wrap gap-3">
+                                    <button
+                                        onClick={exportCSV}
+                                        className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold px-4 py-2.5 rounded-2xl text-sm transition"
+                                    >
+                                        Export CSV
+                                    </button>
 
-                                    return (
-                                        <div className="flex flex-col items-end gap-2">
+                                    <button
+                                        onClick={exportHTMLMarksheet}
+                                        className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold px-4 py-2.5 rounded-2xl text-sm transition"
+                                    >
+                                        Export Marksheet
+                                    </button>
 
-                                            {currentAssessment?.results_published ? (
-                                                <div className="bg-green-50 hover:bg-green-200 text-green-700 border border-green-400 text-sm px-4 py-2 rounded-lg font-semibold transition">
-                                                    Results Published
-                                                </div>
-                                            ) : (
-                                                <button
-                                                    onClick={async () => {
-                                                        const allEvaluated = assessmentSubmissions.every(
-                                                            s => s.status === "Evaluated" || s.status === "Finalized"
-                                                        );
-
-                                                        if (!allEvaluated) {
-                                                            toast.error("Please evaluate all submissions before publishing results.");
-                                                            return;
-                                                        }
-
-                                                        try {
-                                                            const res = await fetch(
-                                                                `${API_URL}/assessment/publish-results/${selectedAssessmentId}`,
-                                                                {
-                                                                    method: "PATCH"
-                                                                }
-                                                            );
-
-                                                            if (!res.ok) throw new Error();
-
-                                                            toast.success(
-                                                                "Results published! Students can now view their results."
-                                                            );
-
-                                                            fetchAssessments();
-                                                        } catch {
-                                                            toast.error("Failed to publish results.");
-                                                        }
-                                                    }}
-                                                    className="bg-green-400 hover:bg-green-200 text-green-900 text-sm px-4 py-2 rounded-lg font-medium transition"
-                                                >
-                                                    Publish Results
-                                                </button>
-                                            )}
-
-                                            <button
-                                                onClick={exportCSV}
-                                                className="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-400 text-sm px-4 py-2 rounded-lg font-bold transition"
-                                            >
-                                                Export CSV
-                                            </button>
-
+                                    {savedAssessments.find(a => String(a._id) === String(selectedAssessmentId))?.results_published ? (
+                                        <div className="bg-green-100 text-green-700 font-semibold px-5 py-2.5 rounded-2xl border border-green-200 text-sm flex items-center gap-2">
+                                            ✓ Results Published
                                         </div>
-                                    );
-                                })()}
+                                    ) : (
+                                        <button
+                                            onClick={async () => {
+                                                const allEvaluated = assessmentSubmissions.length > 0 &&
+                                                    assessmentSubmissions.every(s => s.status === "Evaluated" || s.status === "Finalized");
+                                                if (!allEvaluated) {
+                                                    toast.error("Please evaluate all submissions before publishing results.");
+                                                    return;
+                                                }
+                                                try {
+                                                    const res = await fetch(`${API_URL}/assessment/publish-results/${selectedAssessmentId}`, { method: "PATCH" });
+                                                    if (!res.ok) throw new Error();
+                                                    toast.success("Results published! Students can now view their results.");
+                                                    fetchAssessments();
+                                                } catch {
+                                                    toast.error("Failed to publish results.");
+                                                }
+                                            }}
+                                            className="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2.5 rounded-2xl transition text-sm"
+                                        >
+                                            Publish Results
+                                        </button>
+                                    )}
+                                </div>
                             </div>
 
                             {loadingSubmissions ? (
