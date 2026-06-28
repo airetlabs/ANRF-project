@@ -8,223 +8,190 @@ export default function ViewSubmissionPage() {
   const { submissionId } = useParams();
   const router = useRouter();
 
-  const [answers, setAnswers] = useState([]);
-  const [questions, setQuestions] = useState([]);
-  const [meta, setMeta] = useState(null);
+  const [answers, setAnswers] = useState([]);   // [{question_id, answer}]
+  const [questions, setQuestions] = useState({}); // {question_id: {text, max_marks, ans_length}}
+  const [meta, setMeta] = useState(null);         // {status, started_at, submitted_at, final_marks}
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+
+  const getWordCount = (text) =>
+    (text || "").trim().split(/\s+/).filter(Boolean).length;
+
+  const getCharCount = (text) => (text || "").length;
+
+  const fmt = (dateStr) => {
+    if (!dateStr) return null;
+    const d = new Date(dateStr);
+    const day = d.getDate();
+    const month = d.toLocaleString("en-US", { month: "short" });
+    const year = d.getFullYear();
+    let hours = d.getHours();
+    const minutes = String(d.getMinutes()).padStart(2, "0");
+    const ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12 || 12;
+    return `${day} ${month} ${year}, ${hours}:${minutes} ${ampm}`;
+  };
 
   useEffect(() => {
-    const role = localStorage.getItem("userRole");
-    if (role !== "student") { router.push("/login"); return; }
-    fetchData();
-  }, []);
+    if (submissionId) fetchAll();
+  }, [submissionId]);
 
-  const fetchData = async () => {
+  const fetchAll = async () => {
     try {
-      // 1. Get student's raw answers from /submission/view/{id}
-      const ansRes = await fetch(`${API_URL}/submission/view/${submissionId}`);
-      if (!ansRes.ok) { setError("Submission not found."); setLoading(false); return; }
-      const ansData = await ansRes.json(); // [{question_id, answer}]
-      setAnswers(ansData);
-
-      // 2. Get submission meta from student submissions list
       const email = localStorage.getItem("userEmail");
-      if (!email) { setError("Session expired. Please log in again."); setLoading(false); return; }
 
-      const subRes = await fetch(`${API_URL}/submission/student/${encodeURIComponent(email)}`);
-      if (!subRes.ok) { setError("Could not load submission details."); setLoading(false); return; }
-      const subs = await subRes.json();
-      const found = subs.find((s) => s._id === submissionId);
-      if (!found) { setError("Submission not found in your records."); setLoading(false); return; }
-      setMeta(found);
+      // 1. Get answers for this submission
+      const answersRes = await fetch(`${API_URL}/submission/view/${submissionId}`);
+      const answersData = await answersRes.json();
+      setAnswers(Array.isArray(answersData) ? answersData : []);
 
-      // 3. Get questions for the assessment
-      const qRes = await fetch(`${API_URL}/assessment/${found.assessment_id}`);
-      if (qRes.ok) {
-        const qData = await qRes.json();
-        setQuestions(qData.questions || []);
+      // 2. Get submission meta (status, times, marks) from student's submissions list
+      const subListRes = await fetch(`${API_URL}/submission/student/${email}`);
+      const subList = await subListRes.json();
+      const thisSub = subList.find((s) => s._id === submissionId);
+      setMeta(thisSub || null);
+
+      // 3. Get assessment questions (text, max_marks, ans_length)
+      if (thisSub?.assessment_id) {
+        const assessRes = await fetch(`${API_URL}/assessment/questions/${thisSub.assessment_id}`);
+        const assessData = await assessRes.json();
+
+        // Build a lookup map by question_id
+        const qMap = {};
+        if (Array.isArray(assessData)) {
+          assessData.forEach((q) => {
+            qMap[String(q.question_id)] = {
+              text: q.question_text,
+              max_marks: q.max_marks,
+              ans_length: Number(q.ans_length) || 0,
+            };
+          });
+        }
+        setQuestions(qMap);
       }
-    } catch (e) {
-      console.error(e);
-      setError("Failed to load submission.");
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const fmt = (dt) =>
-    dt
-      ? new Date(dt).toLocaleString("en-IN", {
-          day: "numeric", month: "short", year: "numeric",
-          hour: "numeric", minute: "2-digit", hour12: true,
-        })
-      : "—";
-
-  // Build lookup: question_id (string) → answer text
-  const answerMap = {};
-  answers.forEach((a) => {
-    answerMap[String(a.question_id)] = a.answer;
-  });
-
-  const statusColor = (s) => {
-    if (s === "Finalized") return "bg-purple-100 text-purple-700";
-    if (s === "Evaluated") return "bg-green-100 text-green-700";
-    if (s === "Revaluation Requested") return "bg-amber-100 text-amber-700";
-    return "bg-blue-100 text-blue-700";
-  };
-
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <div className="text-center">
-        <div className="w-12 h-12 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-slate-500 text-sm">Loading your submission...</p>
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 via-slate-50 to-slate-200">
+        <div className="text-center">
+          <div className="w-14 h-14 border-4 border-slate-300 border-t-slate-900 rounded-full animate-spin mx-auto mb-6"></div>
+          <h2 className="text-2xl font-bold text-slate-900">Loading Submission...</h2>
+        </div>
       </div>
-    </div>
-  );
-
-  if (error) return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
-      <div className="bg-white rounded-2xl border border-red-200 p-8 text-center max-w-sm w-full">
-        <div className="text-4xl mb-3">⚠️</div>
-        <p className="text-red-600 font-semibold mb-4">{error}</p>
-        <button onClick={() => router.back()}
-          className="bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-semibold">
-          Go Back
-        </button>
-      </div>
-    </div>
-  );
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-slate-200">
 
       {/* NAVBAR */}
-      <div className="sticky top-0 z-50 bg-white border-b border-slate-200 px-5 sm:px-8 py-4 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-3">
-          <button onClick={() => router.back()}
-            className="text-slate-500 hover:text-slate-800 transition text-sm flex items-center gap-1.5">
-            ← Back
-          </button>
-          <div className="h-4 w-px bg-slate-200" />
-          <div>
-            <h1 className="text-base font-bold text-slate-900 leading-tight">
-              {meta?.assessment_title || "Submission"}
-            </h1>
-            <p className="text-xs text-slate-500">View Submission</p>
-          </div>
+      <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 sm:px-8 py-4 flex items-center gap-4">
+        <button
+          onClick={() => router.push("/student/dashboard")}
+          className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 px-4 py-2 rounded-xl font-semibold text-sm transition"
+        >
+          ← Back to Dashboard
+        </button>
+        <div>
+          <h1 className="text-lg sm:text-xl font-bold text-slate-900">View Submission</h1>
+          <p className="text-slate-500 text-xs">Read-only — submitted answers</p>
         </div>
-        {meta?.status && (
-          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColor(meta.status)}`}>
-            {meta.status}
-          </span>
-        )}
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-5">
+      <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8">
 
         {/* META CARD */}
         {meta && (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div>
-                <p className="text-slate-400 text-xs mb-0.5">Student</p>
-                <p className="font-semibold text-slate-800 text-xs truncate">{meta.student_email}</p>
-              </div>
-              <div>
-                <p className="text-slate-400 text-xs mb-0.5">Register No.</p>
-                <p className="font-semibold text-slate-800 text-xs">{meta.student_id || "—"}</p>
-              </div>
-              <div>
-                <p className="text-slate-400 text-xs mb-0.5">Started</p>
-                <p className="font-semibold text-slate-800 text-xs">{fmt(meta.started_at)}</p>
-              </div>
-              <div>
-                <p className="text-slate-400 text-xs mb-0.5">Submitted</p>
-                <p className="font-semibold text-slate-800 text-xs">{fmt(meta.submitted_at)}</p>
-              </div>
-            </div>
-
-            {meta.status === "Finalized" && meta.final_marks != null && (
-              <div className="mt-4 pt-4 border-t border-slate-100">
-                <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-4 py-2">
-                  <span className="text-blue-800 font-bold text-sm">Final Score: {meta.final_marks}</span>
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-8">
+            <div className="flex flex-wrap gap-6 text-sm">
+              {meta.started_at && (
+                <div>
+                  <p className="text-slate-500 text-xs mb-0.5">Started</p>
+                  <p className="font-semibold text-slate-800">{fmt(meta.started_at)}</p>
                 </div>
-              </div>
-            )}
+              )}
+              {meta.submitted_at && (
+                <div>
+                  <p className="text-slate-500 text-xs mb-0.5">Submitted</p>
+                  <p className="font-semibold text-slate-800">{fmt(meta.submitted_at)}</p>
+                </div>
+              )}
+              {meta.final_marks != null && (
+                <div>
+                  <p className="text-slate-500 text-xs mb-0.5">Score</p>
+                  <p className="font-bold text-blue-700">{meta.final_marks}</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
         {/* QUESTIONS + ANSWERS */}
-        {questions.length > 0 ? (
-          questions.map((q, idx) => {
-            // Backend stores question_id as int or string — try both
-            const qId = String(q.question_id ?? idx);
-            const studentAnswer =
-              answerMap[qId] ??
-              answerMap[String(idx)] ??
-              answerMap[String(idx + 1)] ??
-              "";
+        <div className="space-y-8">
+          {answers.map((item, index) => {
+            const qid = String(item.question_id);
+            const q = questions[qid] || {};
+            const answerText = item.answer || "";
+            const wordCount = getWordCount(answerText);
+            const charCount = getCharCount(answerText);
+            const expectedLength = q.ans_length || 0;
+            const isOverLimit = expectedLength > 0 && wordCount > expectedLength;
 
             return (
-              <div key={qId} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="bg-slate-50 border-b border-slate-200 px-5 py-3 flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">
-                    Question {idx + 1}
-                  </span>
-                  <span className="text-xs text-slate-400">
-                    {q.max_marks} mark{q.max_marks !== 1 ? "s" : ""}
-                  </span>
+              <div key={qid} className="bg-white rounded-[30px] border border-slate-200 p-8 shadow-sm">
+
+                {/* QUESTION HEADER */}
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-2xl font-bold text-slate-900">Question {index + 1}</h2>
+                  {q.max_marks && (
+                    <div className="bg-slate-900 text-white px-4 py-2 rounded-xl font-semibold text-sm">
+                      {q.max_marks} Marks
+                    </div>
+                  )}
                 </div>
-                <div className="px-5 py-4 space-y-4">
-                  <p className="text-slate-800 font-semibold text-sm leading-relaxed">{q.question_text}</p>
-                  <div>
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Your Answer</p>
-                    <div className={`rounded-xl px-4 py-3 text-sm leading-relaxed border ${
-                      studentAnswer.trim()
-                        ? "bg-slate-50 border-slate-200 text-slate-700"
-                        : "bg-red-50 border-red-100 text-red-400 italic"
-                    }`}>
-                      {studentAnswer.trim() || "No answer submitted"}
+
+                {/* QUESTION TEXT */}
+                {q.text && (
+                  <div className="mb-5">
+                    <p className="text-slate-800 text-lg leading-7">{q.text}</p>
+                  </div>
+                )}
+
+                <div className="border-t border-slate-100 pt-5">
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">Your Answer</p>
+
+                  {/* ANSWER BOX — read-only styled like assessment page */}
+                  <div className="w-full border-2 border-slate-200 rounded-2xl p-5 text-slate-900 bg-slate-50 min-h-[120px] whitespace-pre-wrap leading-7">
+                    {answerText || <span className="text-slate-400 italic">No answer provided</span>}
+                  </div>
+
+                  {/* WORD / CHAR COUNT — same layout as assessment page */}
+                  <div className="flex justify-between items-center mt-3 px-1">
+                    <p className="text-slate-500 text-sm">
+                      Expected length:{" "}
+                      <span className="font-semibold text-slate-700">
+                        {expectedLength > 0 ? `${expectedLength} words` : "Not specified"}
+                      </span>
+                    </p>
+                    <div className="text-right">
+                      <p className={`text-sm font-semibold ${isOverLimit ? "text-red-500" : "text-slate-500"}`}>
+                        {wordCount} / {expectedLength > 0 ? expectedLength : "—"} words
+                      </p>
+                      <p className="text-sm text-slate-500">{charCount} characters</p>
                     </div>
                   </div>
+
                 </div>
               </div>
             );
-          })
-        ) : answers.length > 0 ? (
-          // Fallback: no question text available, show raw answers
-          answers.map((a, idx) => (
-            <div key={idx} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="bg-slate-50 border-b border-slate-200 px-5 py-3">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">
-                  Question {idx + 1}
-                </span>
-              </div>
-              <div className="px-5 py-4">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Your Answer</p>
-                <div className={`rounded-xl px-4 py-3 text-sm leading-relaxed border ${
-                  a.answer?.trim()
-                    ? "bg-slate-50 border-slate-200 text-slate-700"
-                    : "bg-red-50 border-red-100 text-red-400 italic"
-                }`}>
-                  {a.answer?.trim() || "No answer submitted"}
-                </div>
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-500 text-sm">
-            No answers found for this submission.
-          </div>
-        )}
-
-        <div className="pb-6">
-          <button onClick={() => router.back()}
-            className="w-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 py-3 rounded-xl text-sm font-semibold transition">
-            ← Back to Dashboard
-          </button>
+          })}
         </div>
+
       </div>
     </div>
   );
