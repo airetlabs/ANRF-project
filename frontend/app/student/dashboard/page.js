@@ -247,8 +247,9 @@ export default function StudentDashboard() {
                     <h2 className="text-lg font-bold text-slate-900 flex-1 leading-snug">
                       {assessment.title}
                     </h2>
+                    {/* CHANGE 1: removed ⚠ from Missed badge */}
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 ${statusBadge[status] || "bg-slate-200 text-slate-600"}`}>
-                      {isMissed ? "⚠ Missed" : status}
+                      {status}
                     </span>
                   </div>
 
@@ -300,26 +301,21 @@ export default function StudentDashboard() {
                       </div>
                     )}
 
-                    {/* MISSED NOTICE */}
-                    {isMissed && (
-                      <div className="mt-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-red-600 text-xs font-medium">
-                        ⚠ You did not submit within the assessment window.
-                      </div>
-                    )}
+                    {/* CHANGE 2: removed the red "You did not submit within..." notice box */}
                   </div>
 
                   {/* ACTION BUTTONS */}
                   <div className="space-y-2 mt-auto">
                     {isSubmitted ? (
                       <>
-                        {/* VIEW SUBMISSION — always visible after submit */}
+                        {/* VIEW SUBMISSION */}
                         <button
                           onClick={() => router.push(`/student/view-submission/${sub.submissionId}`)}
                           className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 rounded-xl font-semibold transition text-sm border border-slate-200">
                           View Submission
                         </button>
 
-                        {/* VIEW RESULT — only when finalized */}
+                        {/* VIEW RESULT */}
                         {isFinalized && (
                           <button
                             onClick={() => router.push(`/student/result/${sub.submissionId}`)}
@@ -335,7 +331,7 @@ export default function StudentDashboard() {
                           </div>
                         )}
 
-                        {/* REVALUATION — only when finalized and not already requested */}
+                        {/* REVALUATION */}
                         {isFinalized && !sub.revaluationRequested && (
                           <button
                             onClick={() => setRevalModal({ assessmentTitle: assessment.title, submissionId: sub.submissionId })}
@@ -352,9 +348,8 @@ export default function StudentDashboard() {
                         )}
                       </>
                     ) : isMissed ? (
-                      <div className="w-full text-center text-xs text-red-500 font-semibold py-2 bg-red-50 border border-red-200 rounded-xl">
-                        Assessment window closed
-                      </div>
+                      // CHANGE 3: removed "Assessment window closed" button — nothing shown for missed
+                      null
                     ) : (
                       <button
                         onClick={() => router.push(`/student/assessment/${assessment._id}`)}
