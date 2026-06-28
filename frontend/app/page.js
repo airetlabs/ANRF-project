@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 export default function LandingPage() {
   const router = useRouter();
   const [showRoleModal, setShowRoleModal] = useState(false);
+  const [openFaq, setOpenFaq] = useState(null);
 
   useEffect(() => {
     const els = document.querySelectorAll(".anim");
@@ -56,6 +57,7 @@ export default function LandingPage() {
     "Build assessments with custom rubrics",
     "AI evaluates submissions instantly",
     "Review and override any AI mark",
+    "Re-evaluate and re-finalize revaluation requests",
     "Publish results when ready",
     "Export marksheets as CSV or HTML",
   ];
@@ -65,7 +67,43 @@ export default function LandingPage() {
     "Submit answers in a clean interface",
     "View rubric-based AI feedback",
     "Understand exactly where marks were lost",
-    "Request revaluation if needed",
+    "Request a one-time revaluation if needed",
+    "Track start time, submission time and final score",
+  ];
+
+  const comparisons = [
+    { aspect: "Grading speed", old: "Days to weeks per batch", neu: "Seconds per submission" },
+    { aspect: "Consistency", old: "Varies by grader, mood, fatigue", neu: "Same rubric applied every time" },
+    { aspect: "Feedback detail", old: "A number, maybe a comment", neu: "Point-by-point rubric breakdown" },
+    { aspect: "Dispute process", old: "Informal, hard to track", neu: "Structured one-time revaluation flow" },
+    { aspect: "Faculty workload", old: "Manual reading of every answer", neu: "Review & adjust AI suggestions" },
+  ];
+
+  const faqs = [
+    {
+      q: "Is AI grading actually fair?",
+      a: "Every answer is scored against the exact rubric your faculty wrote — not a generic standard. The AI shows which rubric points were matched, partially matched, absent, or contradicted, so the reasoning behind every mark is visible.",
+    },
+    {
+      q: "Can a faculty member change an AI-given mark?",
+      a: "Yes. Faculty review every AI suggestion before it's finalized and can adjust any question's marks. The student's result clearly shows both the AI-suggested mark and the faculty-awarded mark.",
+    },
+    {
+      q: "What if I disagree with my final marks?",
+      a: "After results are published, you can submit one revaluation request per assessment with a reason. Your faculty reviews it, can re-run the AI evaluation and adjust marks, then finalizes again — your score updates automatically.",
+    },
+    {
+      q: "How many times can I request revaluation?",
+      a: "Once per assessment submission. This keeps the process fair and ensures faculty time is spent on genuine concerns rather than repeated re-grading.",
+    },
+    {
+      q: "Do I need to install anything?",
+      a: "No. AcadAIsist runs entirely in your browser — faculty create and grade assessments, students answer and view results, all without any installation.",
+    },
+    {
+      q: "What happens to my answers and timing data?",
+      a: "Your start time, submission time, answers, and marks are all recorded against your submission so both you and your faculty have a clear, auditable record.",
+    },
   ];
 
   const roles = [
@@ -215,6 +253,90 @@ export default function LandingPage() {
               className="w-full bg-green-700 hover:bg-green-800 text-white font-semibold py-2 rounded-xl text-xs transition">
               Student Register →
             </button>
+          </div>
+        </div>
+
+        {/* WHY ACADAISIST — COMPARISON */}
+        <div className="anim mb-8">
+          <h2 className="text-lg font-bold text-slate-900 mb-1">Why AcadAIsist</h2>
+          <p className="text-slate-500 text-xs mb-4">Traditional grading vs. AI-assisted evaluation</p>
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Aspect</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wide">Traditional</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-blue-700 uppercase tracking-wide">AcadAIsist</th>
+                </tr>
+              </thead>
+              <tbody>
+                {comparisons.map((c, i) => (
+                  <tr key={c.aspect} className={i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}>
+                    <td className="px-4 py-3 text-xs font-semibold text-slate-700 border-t border-slate-100">{c.aspect}</td>
+                    <td className="px-4 py-3 text-xs text-slate-400 border-t border-slate-100">{c.old}</td>
+                    <td className="px-4 py-3 text-xs text-slate-700 font-medium border-t border-slate-100">
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="text-green-500">✓</span>{c.neu}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* REVALUATION & TRANSPARENCY HIGHLIGHT */}
+        <div className="anim bg-white border border-amber-100 border-t-2 border-t-amber-500 rounded-2xl p-6 shadow-sm mb-8">
+          <div className="flex items-start gap-4 flex-wrap sm:flex-nowrap">
+            <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600 flex-shrink-0">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </div>
+            <div>
+              <p className="font-bold text-slate-800 text-sm mb-1.5">Built-in revaluation, not an afterthought</p>
+              <p className="text-slate-500 text-xs leading-relaxed mb-3">
+                Every result shows exactly which rubric points were matched, partial, absent, or contradicted —
+                plus the AI-suggested mark next to any faculty adjustment. If a student still disagrees, they can
+                submit one revaluation request with a reason. Faculty can re-run AI evaluation, adjust marks, and
+                re-finalize — the student's score and result page update automatically the moment it's done.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {["Rubric-level feedback", "AI vs faculty marks shown", "One-time revaluation", "Auto-updating results"].map((t) => (
+                  <span key={t} className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 text-xs font-medium px-2.5 py-1 rounded-full border border-amber-200">
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* FAQ */}
+        <div className="anim mb-8">
+          <h2 className="text-lg font-bold text-slate-900 mb-1">Frequently asked questions</h2>
+          <p className="text-slate-500 text-xs mb-4">Everything you might be wondering before you sign up</p>
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm divide-y divide-slate-100 overflow-hidden">
+            {faqs.map((item, i) => {
+              const isOpen = openFaq === i;
+              return (
+                <div key={item.q}>
+                  <button
+                    onClick={() => setOpenFaq(isOpen ? null : i)}
+                    className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left hover:bg-slate-50 transition"
+                  >
+                    <span className="text-sm font-semibold text-slate-800">{item.q}</span>
+                    <span className={`text-slate-400 text-sm flex-shrink-0 transition-transform ${isOpen ? "rotate-45" : ""}`}>＋</span>
+                  </button>
+                  {isOpen && (
+                    <div className="px-5 pb-4 -mt-1">
+                      <p className="text-xs text-slate-500 leading-relaxed">{item.a}</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
