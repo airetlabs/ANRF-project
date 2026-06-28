@@ -20,9 +20,10 @@ export default function ViewSubmissionPage() {
 
   const fmt = (dateStr) => {
     if (!dateStr) return null;
-    // Backend now stores timezone-aware UTC (datetime.now(timezone.utc)),
-    // so new Date() parses it correctly. We just specify IST explicitly.
-    return new Date(dateStr).toLocaleString("en-IN", {
+    // Old records: no timezone suffix → append Z to force UTC parsing
+    // New records: already have +00:00 → parsed correctly as-is
+    const normalized = /Z|[+-]\d{2}:\d{2}$/.test(dateStr) ? dateStr : dateStr + "Z";
+    return new Date(normalized).toLocaleString("en-IN", {
       day: "numeric", month: "short", year: "numeric",
       hour: "numeric", minute: "2-digit", hour12: true,
       timeZone: "Asia/Kolkata",

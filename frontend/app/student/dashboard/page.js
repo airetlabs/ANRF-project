@@ -87,9 +87,13 @@ export default function StudentDashboard() {
 
   const fmt = (dateStr) => {
     if (!dateStr) return null;
-    return new Date(dateStr).toLocaleString("en-IN", {
+    // Old records: no timezone suffix (naive UTC) → append Z to force UTC parsing
+    // New records: already have +00:00 → parsed correctly as-is
+    const normalized = /Z|[+-]\d{2}:\d{2}$/.test(dateStr) ? dateStr : dateStr + "Z";
+    return new Date(normalized).toLocaleString("en-IN", {
       day: "numeric", month: "short", year: "numeric",
       hour: "numeric", minute: "2-digit", hour12: true,
+      timeZone: "Asia/Kolkata",
     });
   };
 
@@ -247,7 +251,6 @@ export default function StudentDashboard() {
                     <h2 className="text-lg font-bold text-slate-900 flex-1 leading-snug">
                       {assessment.title}
                     </h2>
-                    {/* CHANGE 1: removed ⚠ from Missed badge */}
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 ${statusBadge[status] || "bg-slate-200 text-slate-600"}`}>
                       {status}
                     </span>
@@ -300,22 +303,18 @@ export default function StudentDashboard() {
                         )}
                       </div>
                     )}
-
-                    {/* CHANGE 2: removed the red "You did not submit within..." notice box */}
                   </div>
 
                   {/* ACTION BUTTONS */}
                   <div className="space-y-2 mt-auto">
                     {isSubmitted ? (
                       <>
-                        {/* VIEW SUBMISSION */}
                         <button
                           onClick={() => router.push(`/student/view-submission/${sub.submissionId}`)}
                           className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 rounded-xl font-semibold transition text-sm border border-slate-200">
                           View Submission
                         </button>
 
-                        {/* VIEW RESULT */}
                         {isFinalized && (
                           <button
                             onClick={() => router.push(`/student/result/${sub.submissionId}`)}
@@ -324,14 +323,12 @@ export default function StudentDashboard() {
                           </button>
                         )}
 
-                        {/* AWAITING EVALUATION */}
                         {!isFinalized && (
                           <div className="w-full text-center text-xs text-slate-500 py-2 bg-slate-50 border border-slate-200 rounded-xl">
                             Awaiting faculty evaluation
                           </div>
                         )}
 
-                        {/* REVALUATION */}
                         {isFinalized && !sub.revaluationRequested && (
                           <button
                             onClick={() => setRevalModal({ assessmentTitle: assessment.title, submissionId: sub.submissionId })}
@@ -340,17 +337,13 @@ export default function StudentDashboard() {
                           </button>
                         )}
 
-                        {/* REVALUATION ALREADY REQUESTED */}
                         {isFinalized && sub.revaluationRequested && (
                           <div className="w-full text-center text-xs text-amber-700 font-semibold py-2 bg-amber-50 border border-amber-200 rounded-xl">
                             🔄 Revaluation requested — pending faculty review
                           </div>
                         )}
                       </>
-                    ) : isMissed ? (
-                      // CHANGE 3: removed "Assessment window closed" button — nothing shown for missed
-                      null
-                    ) : (
+                    ) : isMissed ? null : (
                       <button
                         onClick={() => router.push(`/student/assessment/${assessment._id}`)}
                         disabled={status === "Upcoming"}
