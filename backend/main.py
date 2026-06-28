@@ -13,12 +13,11 @@ from routes.submission import router as submission_router
 
 app = FastAPI()
 
-
 # ENABLE CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -27,48 +26,25 @@ app.add_middleware(
 # HOME API
 @app.get("/")
 def home():
-
-    return {
-        "message": "Backend Running Successfully"
-    }
+    return {"message": "Backend Running Successfully"}
 
 
 # TEST APIs
 @app.get("/assessment/drafts")
 def drafts():
-
-    return {
-        "message": "Draft Assessments API Working"
-    }
+    return {"message": "Draft Assessments API Working"}
 
 
 @app.get("/assessment/published")
 def published():
-
-    return {
-        "message": "Published Assessments API Working"
-    }
+    return {"message": "Published Assessments API Working"}
 
 
 # ASSESSMENT ROUTES
-app.include_router(
-    assessment_router,
-    prefix="/assessment",
-    tags=["Assessment APIs"]
-)
-
+app.include_router(assessment_router, prefix="/assessment", tags=["Assessment APIs"])
 
 # AUTH ROUTES
-app.include_router(
-    auth_router,
-    prefix="/auth",
-    tags=["Authentication APIs"]
-)
-
+app.include_router(auth_router, prefix="/auth", tags=["Authentication APIs"])
 
 # SUBMISSION ROUTES
-app.include_router(
-    submission_router,
-    prefix="/submission",
-    tags=["Submission APIs"]
-)
+app.include_router(submission_router, prefix="/submission", tags=["Submission APIs"])
