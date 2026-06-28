@@ -20,15 +20,13 @@ export default function ViewSubmissionPage() {
 
   const fmt = (dateStr) => {
     if (!dateStr) return null;
-    const d = new Date(dateStr);
-    const day = d.getDate();
-    const month = d.toLocaleString("en-US", { month: "short" });
-    const year = d.getFullYear();
-    let hours = d.getHours();
-    const minutes = String(d.getMinutes()).padStart(2, "0");
-    const ampm = hours >= 12 ? "PM" : "AM";
-    hours = hours % 12 || 12;
-    return `${day} ${month} ${year}, ${hours}:${minutes} ${ampm}`;
+    // Backend now stores timezone-aware UTC (datetime.now(timezone.utc)),
+    // so new Date() parses it correctly. We just specify IST explicitly.
+    return new Date(dateStr).toLocaleString("en-IN", {
+      day: "numeric", month: "short", year: "numeric",
+      hour: "numeric", minute: "2-digit", hour12: true,
+      timeZone: "Asia/Kolkata",
+    });
   };
 
   useEffect(() => {
@@ -109,19 +107,20 @@ export default function ViewSubmissionPage() {
         {meta && (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-8">
             <div className="flex flex-wrap gap-6 text-sm">
-              {meta.started_at && (
-                <div>
-                  <p className="text-slate-500 text-xs mb-0.5">Started</p>
-                  <p className="font-semibold text-slate-800">{fmt(meta.started_at)}</p>
-                </div>
-              )}
-              {meta.submitted_at && (
-                <div>
-                  <p className="text-slate-500 text-xs mb-0.5">Submitted</p>
-                  <p className="font-semibold text-slate-800">{fmt(meta.submitted_at)}</p>
-                </div>
-              )}
-              {meta.final_marks != null && (
+              {/* Started — always show, "—" if null (old record before start-tracking) */}
+              <div>
+                <p className="text-slate-500 text-xs mb-0.5">Started</p>
+                <p className="font-semibold text-slate-800">{fmt(meta.started_at) || "—"}</p>
+              </div>
+
+              {/* Submitted — always show */}
+              <div>
+                <p className="text-slate-500 text-xs mb-0.5">Submitted</p>
+                <p className="font-semibold text-slate-800">{fmt(meta.submitted_at) || "—"}</p>
+              </div>
+
+              {/* Score — only show once faculty has finalized / published results */}
+              {meta.status === "Finalized" && meta.final_marks != null && (
                 <div>
                   <p className="text-slate-500 text-xs mb-0.5">Score</p>
                   <p className="font-bold text-blue-700">{meta.final_marks}</p>

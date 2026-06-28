@@ -88,7 +88,15 @@ export default function AdminDashboard() {
 
   const logout = () => { localStorage.clear(); router.push("/"); };
 
-  const fmt = (dt) => dt ? new Date(dt).toLocaleString("en-GB") : "—";
+  // Explicit IST timezone — backend now stores UTC with +00:00 suffix
+  const fmt = (dt) => {
+    if (!dt) return "—";
+    return new Date(dt).toLocaleString("en-IN", {
+      day: "numeric", month: "short", year: "numeric",
+      hour: "numeric", minute: "2-digit", hour12: true,
+      timeZone: "Asia/Kolkata",
+    });
+  };
 
   const statusColor = (status) => {
     if (status === "Finalized") return "bg-purple-100 text-purple-700";

@@ -6,7 +6,7 @@ from io import StringIO
 import asyncio
 from fastapi import APIRouter, HTTPException
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, timezone
 from database import db
 from evaluation.pipeline import evaluate_pipeline, main
 
@@ -34,9 +34,14 @@ def normalize_question_id(question_id):
     return question_id
 
 
+def utcnow():
+    """Always returns timezone-aware UTC datetime. FastAPI serializes this
+    as '2026-06-28T12:02:00.123000+00:00' so browsers parse it correctly."""
+    return datetime.now(timezone.utc)
+
+
 # ─────────────────────────────────────────────
 # RECORD STARTED_AT — called when student opens the assessment
-# Frontend calls POST /submission/start as soon as the assessment page loads
 # ─────────────────────────────────────────────
 @router.post("/start")
 def start_assessment(data: dict):
@@ -51,17 +56,15 @@ def start_assessment(data: dict):
         "student_email": student_email
     })
 
-    # If already submitted, don't overwrite started_at
     if existing:
         return {"message": "Already submitted", "started_at": existing.get("started_at")}
 
-    # Upsert a draft record with started_at only
     db.AssessmentStart.update_one(
         {"assessment_id": assessment_id, "student_email": student_email},
         {"$setOnInsert": {
             "assessment_id": assessment_id,
             "student_email": student_email,
-            "started_at": datetime.now()
+            "started_at": utcnow()
         }},
         upsert=True
     )
@@ -88,13 +91,12 @@ def submit_assessment(data: dict):
 
     student_id = resolve_student_id(data["student_email"], data.get("student_id"))
 
-    # Pull started_at from AssessmentStart if available
     start_doc = db.AssessmentStart.find_one({
         "assessment_id": data["assessment_id"],
         "student_email": data["student_email"]
     })
-    started_at = start_doc["started_at"] if start_doc else datetime.now()
-    submitted_at = datetime.now()
+    started_at = start_doc["started_at"] if start_doc else utcnow()
+    submitted_at = utcnow()
 
     submission = {
         "assessment_id": data["assessment_id"],
@@ -107,11 +109,6 @@ def submit_assessment(data: dict):
         "revaluation_requested": False,
         "revaluation_reason": None,
         "revaluation_requested_at": None,
-        # Permanent, never reset — once a student has gone through one full
-        # revaluation cycle (requested -> faculty re-finalized), this stays
-        # True forever so they cannot request a second revaluation on the
-        # same submission, even though revaluation_requested itself gets
-        # cleared on every finalize.
         "revaluation_used": False,
     }
 
@@ -134,14 +131,12 @@ def submit_assessment(data: dict):
 
 # ─────────────────────────────────────────────
 # GET STUDENT SUBMISSIONS (student dashboard)
-# Returns started_at + submitted_at + revaluation info
 # ─────────────────────────────────────────────
 @router.get("/student/{student_email}")
 def get_student_submissions(student_email: str):
     submissions = list(db.StudentSubmission.find({"student_email": student_email}))
     for s in submissions:
         s["_id"] = str(s["_id"])
-        # Ensure started_at is included (may be missing on old records)
         if "started_at" not in s:
             s["started_at"] = None
     return submissions
@@ -311,7 +306,6 @@ async def evaluate_submission(submission_id: str):
 
         logger.info(f"Evaluating submission {submission_id}, student {student_id}, assessment {assessment_id}")
 
-        # Pre-set score=0 for unanswered questions
         for q in questions:
             answer = db.StudentAnswer.find_one({
                 "student_id": student_id,
@@ -328,12 +322,6 @@ async def evaluate_submission(submission_id: str):
 
         await main(question_ids, s_ids, assessment_id)
 
-        # Preserve revaluation status if this re-evaluation was triggered
-        # from a revaluation request — only finalize() (save-correction)
-        # should ever clear the revaluation_requested flag. Without this,
-        # re-running AI evaluation on a flagged submission would silently
-        # stamp status back to "Evaluated" while revaluation_requested stays
-        # True, leaving the submission in an inconsistent half-state.
         current = db.StudentSubmission.find_one({"_id": ObjectId(submission_id)})
         new_status = "Revaluation Requested" if current.get("revaluation_requested") else "Evaluated"
 
@@ -379,10 +367,6 @@ def save_correction(data: dict):
         "revaluation_reason": None,
         "revaluation_requested_at": None,
     }
-    # Permanently lock out further revaluation requests once a revaluation
-    # cycle has been finalized. revaluation_used is never reset back to
-    # False anywhere, so this is a one-time-only guarantee for the lifetime
-    # of the submission.
     if was_in_revaluation:
         update_fields["revaluation_used"] = True
 
@@ -552,7 +536,7 @@ def export_csv(assessment_id: str):
 
 
 # ─────────────────────────────────────────────
-# REQUEST REVALUATION — student raises flag
+# REQUEST REVALUATION
 # ─────────────────────────────────────────────
 @router.post("/revaluation")
 def request_revaluation(data: dict):
@@ -584,7 +568,7 @@ def request_revaluation(data: dict):
         {"$set": {
             "revaluation_requested": True,
             "revaluation_reason": reason,
-            "revaluation_requested_at": datetime.now(),
+            "revaluation_requested_at": utcnow(),
             "status": "Revaluation Requested"
         }}
     )
@@ -593,7 +577,7 @@ def request_revaluation(data: dict):
 
 
 # ─────────────────────────────────────────────
-# GET REVALUATION REQUESTS — faculty view per assessment
+# GET REVALUATION REQUESTS — faculty view
 # ─────────────────────────────────────────────
 @router.get("/revaluations/{assessment_id}")
 def get_revaluations(assessment_id: str):
