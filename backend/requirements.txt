@@ -10,4 +10,4 @@ email-validator
 python-multipart
 langchain-core
 langchain-groq
-pandas
+pandaslangchain-nvidia-ai-endpoints 
