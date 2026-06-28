@@ -11,5 +11,9 @@ python-multipart
 langchain-core
 langchain-groq
 pandas
-langchain-nvidia-ai-endpoints 
-langchain-text-splitters 
+langchain-nvidia-ai-endpoints
+langchain-text-splitters
+sentence-transformers
+scikit-learn
+numpy
+faiss-cpu
