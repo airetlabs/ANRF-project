@@ -10,10 +10,10 @@ email-validator
 python-multipart
 langchain-core
 langchain-groq
-pandas
 langchain-nvidia-ai-endpoints
 langchain-text-splitters
+pandas
 sentence-transformers
+chromadb
 scikit-learn
 numpy
-faiss-cpu
