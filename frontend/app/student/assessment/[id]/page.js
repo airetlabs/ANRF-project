@@ -114,6 +114,23 @@ export default function StudentAssessmentPage() {
       }
 
       setQuestions(Array.isArray(questionData) ? questionData : []);
+
+      // ── RECORD STARTED_AT ──────────────────────────────────────────
+      // Fire-and-forget: tells backend when student first opened the page.
+      // If already submitted, the backend /start endpoint ignores this call.
+      const studentEmail = localStorage.getItem("userEmail");
+      if (studentEmail && data._id) {
+        fetch(`${API_URL}/submission/start`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            student_email: studentEmail,
+            assessment_id: data._id,
+          }),
+        }).catch(() => {}); // silently ignore network errors
+      }
+      // ──────────────────────────────────────────────────────────────
+
     } catch (error) {
       console.error(error);
     } finally {

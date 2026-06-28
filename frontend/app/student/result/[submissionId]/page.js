@@ -6,6 +6,7 @@ const API_URL =
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 export default function StudentResultPage() {
     const params = useParams();
@@ -16,6 +17,11 @@ export default function StudentResultPage() {
     const [notPublished, setNotPublished] = useState(false);
     const [expandedFeedback, setExpandedFeedback] = useState({});
     const [downloading, setDownloading] = useState(false);
+
+    // Revaluation request UI state
+    const [showRevalForm, setShowRevalForm] = useState(false);
+    const [revalReason, setRevalReason] = useState("");
+    const [submittingReval, setSubmittingReval] = useState(false);
 
     const submissionId = params?.submissionId;
 
@@ -37,6 +43,41 @@ export default function StudentResultPage() {
             setNotPublished(true);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const submitRevaluation = async () => {
+        const reason = revalReason.trim();
+        if (!reason) {
+            toast.error("Please describe why you're requesting revaluation");
+            return;
+        }
+        try {
+            setSubmittingReval(true);
+            const studentEmail = localStorage.getItem("userEmail");
+            const res = await fetch(`${API_URL}/submission/revaluation`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    submission_id: submissionId,
+                    student_email: studentEmail,
+                    reason,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                toast.error(data.detail || "Failed to submit revaluation request");
+                return;
+            }
+            toast.success("Revaluation request submitted");
+            setShowRevalForm(false);
+            setRevalReason("");
+            fetchResult(); // refresh so status/banner updates immediately
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to submit revaluation request");
+        } finally {
+            setSubmittingReval(false);
         }
     };
 
@@ -234,6 +275,15 @@ export default function StudentResultPage() {
     const totalPoints = result?.questions?.reduce((sum, q) =>
         sum + (q.labels_json?.length || 0), 0);
 
+    // ── Revaluation eligibility ──
+    // Can request only when fully finalized, no request already pending,
+    // and revaluation has never been used before on this submission.
+    const canRequestRevaluation =
+        result.status === "Finalized" &&
+        !result.revaluation_requested &&
+        !result.revaluation_used;
+    const revaluationPending = result.status === "Revaluation Requested";
+
     return (
         <div className="min-h-screen bg-slate-100 p-6">
             <div className="max-w-4xl mx-auto">
@@ -283,6 +333,90 @@ export default function StudentResultPage() {
                             <p className="text-xs text-slate-400 mt-1">matched</p>
                         </div>
                     </div>
+                </div>
+
+                {/* ── REVALUATION SECTION ── */}
+                <div className="mb-6">
+                    {revaluationPending && (
+                        <div className="bg-amber-50 border border-amber-300 rounded-3xl p-6 flex items-start gap-4">
+                            <span className="text-3xl">🔄</span>
+                            <div>
+                                <p className="font-bold text-amber-800">Revaluation Requested</p>
+                                <p className="text-amber-700 text-sm mt-1">
+                                    Your request is with the faculty for review. Your reason:
+                                </p>
+                                {result.revaluation_reason && (
+                                    <p className="text-sm text-slate-700 bg-white border border-amber-200 rounded-xl px-4 py-3 mt-2">
+                                        {result.revaluation_reason}
+                                    </p>
+                                )}
+                                <p className="text-amber-600 text-xs mt-3">
+                                    Marks shown above will update automatically once faculty finalizes the revaluation.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                    {!revaluationPending && result.revaluation_used && (
+                        <div className="bg-slate-50 border border-slate-200 rounded-3xl p-6 flex items-start gap-4">
+                            <span className="text-3xl">✅</span>
+                            <div>
+                                <p className="font-bold text-slate-700">Revaluation Already Used</p>
+                                <p className="text-slate-500 text-sm mt-1">
+                                    This submission has already gone through revaluation. Only one revaluation request is allowed per assessment.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                    {canRequestRevaluation && !showRevalForm && (
+                        <div className="bg-white border border-slate-200 rounded-3xl p-6 flex items-center justify-between flex-wrap gap-4">
+                            <div>
+                                <p className="font-bold text-slate-900">Not satisfied with your marks?</p>
+                                <p className="text-slate-500 text-sm mt-1">
+                                    You can request a one-time revaluation. This cannot be undone once submitted.
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setShowRevalForm(true)}
+                                className="bg-slate-900 hover:bg-slate-700 text-white font-semibold px-5 py-2.5 rounded-2xl text-sm transition whitespace-nowrap"
+                            >
+                                Request Revaluation
+                            </button>
+                        </div>
+                    )}
+
+                    {canRequestRevaluation && showRevalForm && (
+                        <div className="bg-white border border-slate-200 rounded-3xl p-6">
+                            <p className="font-bold text-slate-900 mb-1">Request Revaluation</p>
+                            <p className="text-slate-500 text-sm mb-4">
+                                Explain why you'd like your answers reviewed again. You can only submit this once.
+                            </p>
+                            <textarea
+                                rows={4}
+                                value={revalReason}
+                                onChange={(e) => setRevalReason(e.target.value)}
+                                placeholder="e.g. I believe Question 3 was undermarked because my answer covered the rubric point about..."
+                                className="w-full border border-slate-200 bg-slate-50 p-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition resize-none text-slate-700 mb-4"
+                            />
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => { setShowRevalForm(false); setRevalReason(""); }}
+                                    disabled={submittingReval}
+                                    className="px-5 py-2.5 rounded-2xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition font-semibold text-sm disabled:opacity-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={submitRevaluation}
+                                    disabled={submittingReval}
+                                    className="px-5 py-2.5 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm transition disabled:opacity-50"
+                                >
+                                    {submittingReval ? "Submitting..." : "Submit Request"}
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex flex-wrap gap-3 mb-6 px-1">
