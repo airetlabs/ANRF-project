@@ -151,7 +151,7 @@ export default function RegisterPage() {
                     <select className={`${inputCls} pl-9 pr-3 appearance-none`}
                       value={year} onChange={(e) => setYear(e.target.value)}>
                       <option value="">Select</option>
-                      {YEARS.map((y) => <option key={y} value={y}>Year {y}</option>)}
+                      {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
                     </select>
                   </div>
                 </div>
