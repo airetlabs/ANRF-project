@@ -3,12 +3,12 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://anrf-project-product
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import Sidebar from "../components/Sidebar";
-import Navbar from "../components/Navbar";
-import AssessmentCard from "../components/AssessmentCard";
-import PreviewPanel from "../components/PreviewPanel";
-import AnalyticsChart from "../components/AnalyticsChart";
-import RecentActivity from "../components/RecentActivity";
+import Sidebar from "../../components/Sidebar";
+import Navbar from "../../components/Navbar";
+import AssessmentCard from "../../components/AssessmentCard";
+import PreviewPanel from "../../components/PreviewPanel";
+import AnalyticsChart from "../../components/AnalyticsChart";
+import RecentActivity from "../../components/RecentActivity";
 import Select from "react-select";
 
 export default function Home() {
