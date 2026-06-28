@@ -128,10 +128,6 @@ export default function LandingPage() {
       q: "When can students see their results?",
       a: "Only after faculty evaluates every submission and explicitly clicks Publish Results. Before that, the result page shows a 'not yet published' message instead of any marks.",
     },
-    {
-      q: "What kind of answers can students submit?",
-      a: "Written, free-text answers typed directly into the assessment page, with an expected word limit set per question by faculty. There's no file upload — everything is typed and graded as text.",
-    },
   ];
 
   const roles = [
