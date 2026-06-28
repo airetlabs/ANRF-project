@@ -53,6 +53,14 @@ export default function LandingPage() {
     { num: "04", title: "Faculty reviews", desc: "Verify marks, override if needed, then publish results.", color: "text-amber-600" },
   ];
 
+  const adminBenefits = [
+    "Manage faculty and student accounts",
+    "Configure departments and academic years",
+    "Oversee all assessments across the platform",
+    "Monitor system-wide usage and activity",
+    "Manage roles and access permissions",
+  ];
+
   const facultyBenefits = [
     "Build assessments with custom rubrics",
     "AI evaluates submissions instantly",
@@ -103,6 +111,26 @@ export default function LandingPage() {
     {
       q: "What happens to my answers and timing data?",
       a: "Your start time, submission time, answers, and marks are all recorded against your submission so both you and your faculty have a clear, auditable record.",
+    },
+    {
+      q: "What does an admin do on AcadAIsist?",
+      a: "Admins manage faculty and student accounts, set up departments and academic years, and oversee assessments and activity across the whole platform — they don't grade individual answers themselves.",
+    },
+    {
+      q: "How do I get started as a student?",
+      a: "Register with your college email and registration number, wait for your faculty to publish an assessment for your department and year, then open it from your dashboard within the available time window.",
+    },
+    {
+      q: "Can faculty write their own rubrics?",
+      a: "Yes. When creating an assessment, faculty define the question, an answer key, a custom rubric, and the marks for each question — the AI evaluates strictly against that rubric, not a generic standard.",
+    },
+    {
+      q: "When can students see their results?",
+      a: "Only after faculty evaluates every submission and explicitly clicks Publish Results. Before that, the result page shows a 'not yet published' message instead of any marks.",
+    },
+    {
+      q: "What kind of answers can students submit?",
+      a: "Written, free-text answers typed directly into the assessment page, with an expected word limit set per question by faculty. There's no file upload — everything is typed and graded as text.",
     },
   ];
 
@@ -213,8 +241,28 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* FOR FACULTY / FOR STUDENTS */}
-        <div className="anim grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+        {/* FOR ADMIN / FOR FACULTY / FOR STUDENTS */}
+        <div className="anim grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <div className="bg-white border border-red-100 border-t-2 border-t-red-500 rounded-2xl p-5 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 bg-red-50 rounded-lg flex items-center justify-center text-red-500">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+              </div>
+              <p className="font-bold text-slate-800 text-sm">For Admin</p>
+            </div>
+            <ul className="space-y-2 mb-5">
+              {adminBenefits.map((b) => (
+                <li key={b} className="flex items-start gap-2 text-xs text-slate-600">
+                  <span className="text-red-500 mt-0.5 shrink-0">✓</span>{b}
+                </li>
+              ))}
+            </ul>
+            <button onClick={() => router.push("/login")}
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-xl text-xs transition">
+              Admin Sign In →
+            </button>
+          </div>
+
           <div className="bg-white border border-blue-100 border-t-2 border-t-blue-600 rounded-2xl p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600">
@@ -275,9 +323,7 @@ export default function LandingPage() {
                     <td className="px-4 py-3 text-xs font-semibold text-slate-700 border-t border-slate-100">{c.aspect}</td>
                     <td className="px-4 py-3 text-xs text-slate-400 border-t border-slate-100">{c.old}</td>
                     <td className="px-4 py-3 text-xs text-slate-700 font-medium border-t border-slate-100">
-                      <span className="inline-flex items-center gap-1.5">
-                        <span className="text-green-500">✓</span>{c.neu}
-                      </span>
+                      {c.neu}
                     </td>
                   </tr>
                 ))}
@@ -342,6 +388,17 @@ export default function LandingPage() {
 
         {/* ROLE CARDS (who uses what) */}
         <div className="anim flex flex-col sm:flex-row gap-2.5 mb-8">
+          <div className="flex-1 flex items-center gap-3 bg-white border border-slate-200 rounded-2xl px-4 py-3 hover:-translate-y-0.5 transition-transform duration-200 shadow-sm">
+            <div className="w-9 h-9 bg-red-50 border border-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-800">Admin</p>
+              <p className="text-xs text-slate-400">Manage users, departments and settings</p>
+            </div>
+          </div>
           <div className="flex-1 flex items-center gap-3 bg-white border border-slate-200 rounded-2xl px-4 py-3 hover:-translate-y-0.5 transition-transform duration-200 shadow-sm">
             <div className="w-9 h-9 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
