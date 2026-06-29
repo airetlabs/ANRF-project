@@ -47,13 +47,23 @@ export default function StudentDashboard() {
       const year = localStorage.getItem("year");
       const email = localStorage.getItem("userEmail");
 
-      const [assessmentRes, submissionRes] = await Promise.all([
+      const [assessmentRes, submissionRes, resultRes] = await Promise.all([
         fetch(`${API_URL}/assessment/student/${department}/${year}`),
         fetch(`${API_URL}/submission/student/${email}`),
+        fetch(`${API_URL}/submission/result/${email}`),
       ]);
 
       const assessmentData = await assessmentRes.json();
       const submissionData = await submissionRes.json();
+      const resultData = await resultRes.json();
+
+      // Build results_published lookup by submission_id
+      const resultsPublishedMap = {};
+      if (Array.isArray(resultData)) {
+        resultData.forEach((r) => {
+          resultsPublishedMap[r.submission_id] = r.results_published || false;
+        });
+      }
 
       const sorted = [...assessmentData].sort((a, b) => (a._id < b._id ? 1 : -1));
       setAssessments(sorted);
@@ -71,6 +81,7 @@ export default function StudentDashboard() {
           startedAt: s.started_at || null,
           revaluationRequested: s.revaluation_requested || false,
           revaluationUsed: s.revaluation_used || false,
+          resultsPublished: resultsPublishedMap[s._id] || false,
         };
       });
       setSubmissionMap(map);
@@ -295,8 +306,8 @@ export default function StudentDashboard() {
                       </div>
                     )}
 
-                    {/* SCORE BADGE */}
-                    {isFinalized && sub?.finalMarks != null && (
+                    {/* SCORE BADGE — only when results published */}
+                    {isFinalized && sub?.resultsPublished && sub?.finalMarks != null && (
                       <div className="mt-2 inline-flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-3 py-1.5">
                         <span className="text-blue-800 font-bold text-sm">Score: {sub.finalMarks}</span>
                         {sub.revaluationRequested && (
@@ -317,8 +328,8 @@ export default function StudentDashboard() {
                           View Submission
                         </button>
 
-                        {/* VIEW RESULT — only when finalized */}
-                        {isFinalized && (
+                        {/* VIEW RESULT — only when results published */}
+                        {isFinalized && sub.resultsPublished && (
                           <button
                             onClick={() => router.push(`/student/result/${sub.submissionId}`)}
                             className="w-full bg-blue-800 hover:bg-blue-700 text-white py-2 rounded-xl font-semibold transition text-sm">
@@ -334,7 +345,7 @@ export default function StudentDashboard() {
                         )}
 
                         {/* REQUEST REVALUATION BUTTON */}
-                        {isFinalized && !sub.revaluationRequested && !sub.revaluationUsed && (
+                        {isFinalized && sub.resultsPublished && !sub.revaluationRequested && !sub.revaluationUsed && (
                           <button
                             onClick={() => setRevalModal({ assessmentTitle: assessment.title, submissionId: sub.submissionId })}
                             className="w-full bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 py-2 rounded-xl font-semibold transition text-sm">
@@ -343,7 +354,7 @@ export default function StudentDashboard() {
                         )}
 
                         {/* REVALUATION ALREADY USED */}
-                        {isFinalized && sub.revaluationUsed && (
+                        {isFinalized && sub.resultsPublished && sub.revaluationUsed && (
                           <div className="w-full text-center text-xs text-slate-500 font-semibold py-2 bg-slate-50 border border-slate-200 rounded-xl">
                             Revaluation already used
                           </div>
