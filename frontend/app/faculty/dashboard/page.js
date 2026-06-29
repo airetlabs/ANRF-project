@@ -36,7 +36,11 @@ export default function Home() {
   const [selectedAssessmentId, setSelectedAssessmentId] = useState(null);
   const [assessmentSubmissions, setAssessmentSubmissions] = useState([]);
   const [revaluationRequests, setRevaluationRequests] = useState([]);
-  const [submissionsTab, setSubmissionsTab] = useState("all"); // "all" | "revaluations"
+  // FIX 1: persist tab across navigation (returning from review page)
+  const [submissionsTab, setSubmissionsTab] = useState(() => {
+    if (typeof window !== "undefined") return localStorage.getItem("submissionsTab") || "all";
+    return "all";
+  });
   const [loadingSubmissions, setLoadingSubmissions] = useState(false);
   const [evaluatingSubmission, setEvaluatingSubmission] = useState(null);
   const [exportingCSV, setExportingCSV] = useState(false);
@@ -183,13 +187,6 @@ export default function Home() {
 
   const exportCSV = async () => {
     if (!selectedAssessmentId) return;
-    const validStatuses = ["Evaluated", "Finalized", "Revaluation Requested"];
-    const allReady = assessmentSubmissions.length > 0 &&
-      assessmentSubmissions.every((s) => validStatuses.includes(s.status));
-    if (!allReady) {
-      toast.error("Please evaluate all submissions before exporting CSV.");
-      return;
-    }
     try {
       setExportingCSV(true);
       const response = await fetch(`${API_URL}/submission/export-csv/${selectedAssessmentId}`);
@@ -296,13 +293,6 @@ export default function Home() {
 
   const publishResults = async () => {
     if (!selectedAssessmentId) return;
-    const validStatuses = ["Evaluated", "Finalized", "Revaluation Requested"];
-    const allReady = assessmentSubmissions.length > 0 &&
-      assessmentSubmissions.every((s) => validStatuses.includes(s.status));
-    if (!allReady) {
-      toast.error("Please evaluate all submissions before publishing results.");
-      return;
-    }
     try {
       setPublishingResults(true);
       const response = await fetch(`${API_URL}/assessment/publish-results/${selectedAssessmentId}`, { method: "PATCH" });
@@ -453,9 +443,10 @@ export default function Home() {
   const currentAssessment = savedAssessments.find(
     (a) => a._id === selectedAssessmentId || String(a._id) === String(selectedAssessmentId)
   );
-  const validStatuses = ["Evaluated", "Finalized", "Revaluation Requested"];
+
+  // FIX 2: all buttons only enabled when ALL submissions are Finalized
   const allSubmissionsReady = assessmentSubmissions.length > 0 &&
-    assessmentSubmissions.every((s) => validStatuses.includes(s.status));
+    assessmentSubmissions.every((s) => s.status === "Finalized");
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-slate-200 text-gray-900 flex">
@@ -769,12 +760,13 @@ export default function Home() {
                 </div>
                 <div className="flex flex-wrap gap-3">
                   <button onClick={exportCSV} disabled={exportingCSV || !allSubmissionsReady}
-                    title={!allSubmissionsReady ? "Evaluate all submissions before exporting CSV" : "Export marks as CSV"}
-                    className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold px-4 py-2.5 rounded-2xl text-sm transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    title={!allSubmissionsReady ? "All submissions must be Finalized before exporting" : "Export marks as CSV"}
+                    className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold px-4 py-2.5 rounded-2xl text-sm transition disabled:opacity-40 disabled:cursor-not-allowed">
                     {exportingCSV ? "Exporting..." : "Export CSV"}
                   </button>
-                  <button onClick={exportHTMLMarksheet} disabled={exportingHTML || assessmentSubmissions.length === 0}
-                    className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold px-4 py-2.5 rounded-2xl text-sm transition disabled:opacity-50 disabled:cursor-not-allowed">
+                  <button onClick={exportHTMLMarksheet} disabled={exportingHTML || !allSubmissionsReady}
+                    title={!allSubmissionsReady ? "All submissions must be Finalized before exporting" : "Export marksheet"}
+                    className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold px-4 py-2.5 rounded-2xl text-sm transition disabled:opacity-40 disabled:cursor-not-allowed">
                     {exportingHTML ? "Exporting..." : "Export Marksheet"}
                   </button>
                   {currentAssessment?.results_published ? (
@@ -782,21 +774,25 @@ export default function Home() {
                       ✓ Results Published
                     </div>
                   ) : (
-                    <button onClick={publishResults} disabled={publishingResults}
-                      className="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2.5 rounded-2xl transition text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                    <button onClick={publishResults}
+                      disabled={publishingResults || !allSubmissionsReady}
+                      title={!allSubmissionsReady ? "All submissions must be Finalized before publishing" : "Publish results"}
+                      className="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2.5 rounded-2xl transition text-sm disabled:opacity-40 disabled:cursor-not-allowed">
                       {publishingResults ? "Publishing..." : "Publish Results"}
                     </button>
                   )}
                 </div>
               </div>
 
-              {/* ── TABS: All Submissions | Revaluation Requests ── */}
+              {/* TABS — always visible, persisted */}
               <div className="flex gap-2 mb-5">
-                <button onClick={() => setSubmissionsTab("all")}
+                <button
+                  onClick={() => { setSubmissionsTab("all"); localStorage.setItem("submissionsTab", "all"); }}
                   className={`px-5 py-2 rounded-xl text-sm font-semibold transition ${submissionsTab === "all" ? "bg-slate-900 text-white" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
                   All Submissions ({assessmentSubmissions.length})
                 </button>
-                <button onClick={() => setSubmissionsTab("revaluations")}
+                <button
+                  onClick={() => { setSubmissionsTab("revaluations"); localStorage.setItem("submissionsTab", "revaluations"); }}
                   className={`px-5 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-2 ${submissionsTab === "revaluations" ? "bg-amber-600 text-white" : "bg-white border border-amber-200 text-amber-700 hover:bg-amber-50"}`}>
                   🔄 Revaluation Requests
                   {revaluationRequests.length > 0 && (
@@ -810,7 +806,6 @@ export default function Home() {
               {loadingSubmissions ? (
                 <div className="bg-white rounded-3xl p-8 text-slate-500">Loading submissions...</div>
               ) : submissionsTab === "all" ? (
-                // ── ALL SUBMISSIONS TABLE ──
                 <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
                   <table className="w-full">
                     <thead className="bg-slate-100">
@@ -881,7 +876,6 @@ export default function Home() {
                   </table>
                 </div>
               ) : (
-                // ── REVALUATION REQUESTS TABLE ──
                 revaluationRequests.length === 0 ? (
                   <div className="bg-white rounded-3xl p-10 text-center border border-slate-200">
                     <div className="text-4xl mb-3">✅</div>
@@ -890,8 +884,7 @@ export default function Home() {
                 ) : (
                   <div className="space-y-4">
                     {revaluationRequests.map((req) => (
-                      <div key={req.submission_id}
-                        className="bg-white border border-amber-200 rounded-2xl p-5 shadow-sm">
+                      <div key={req.submission_id} className="bg-white border border-amber-200 rounded-2xl p-5 shadow-sm">
                         <div className="flex items-start justify-between gap-4 flex-wrap">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
@@ -915,7 +908,6 @@ export default function Home() {
                             </div>
                           </div>
                           <div className="flex flex-col gap-2 shrink-0">
-                            {/* Re-evaluate first (run AI again) */}
                             <button
                               disabled={evaluatingSubmission === req.submission_id}
                               onClick={() => evaluateSubmission(req.submission_id)}
@@ -926,7 +918,6 @@ export default function Home() {
                               }`}>
                               {evaluatingSubmission === req.submission_id ? "Re-evaluating..." : "Re-evaluate (AI)"}
                             </button>
-                            {/* Review + re-finalize */}
                             <button
                               onClick={() => {
                                 localStorage.setItem("selectedAssessmentId", selectedAssessmentId);
