@@ -1,3 +1,4 @@
+
 import logging
 import json
 from fastapi.responses import StreamingResponse
@@ -6,12 +7,14 @@ from io import StringIO
 import asyncio
 from fastapi import APIRouter, HTTPException
 from bson import ObjectId
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from database import db
 from evaluation.pipeline import evaluate_pipeline, main
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+IST = timezone(timedelta(hours=5, minutes=30))
 
 
 def resolve_student_id(student_email: str, student_id_from_client: str | None = None) -> str:
@@ -38,6 +41,17 @@ def utcnow():
     """Always returns timezone-aware UTC datetime. FastAPI serializes this
     as '2026-06-28T12:02:00.123000+00:00' so browsers parse it correctly."""
     return datetime.now(timezone.utc)
+
+
+def fmt_ist(dt):
+    """Convert a UTC datetime (or ISO string) to IST string for CSV export."""
+    if not dt:
+        return ""
+    if isinstance(dt, str):
+        dt = datetime.fromisoformat(dt.replace("Z", "+00:00"))
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(IST).strftime("%d %b %Y, %I:%M %p IST")
 
 
 # ─────────────────────────────────────────────
@@ -514,7 +528,7 @@ def export_csv(assessment_id: str):
 
     output = StringIO()
     writer = csv.writer(output)
-    writer.writerow(["S.No", "Student Reg No", "Student Email", "Assessment Name", "Started At", "Submitted At", "Final Marks"])
+    writer.writerow(["S.No", "Student Reg No", "Student Email", "Assessment Name", "Started At (IST)", "Submitted At (IST)", "Final Marks"])
 
     for idx, s in enumerate(submissions, start=1):
         writer.writerow([
@@ -522,8 +536,8 @@ def export_csv(assessment_id: str):
             s.get("student_id", ""),
             s.get("student_email", ""),
             assessment.get("title", ""),
-            s.get("started_at", ""),
-            s.get("submitted_at", ""),
+            fmt_ist(s.get("started_at")),
+            fmt_ist(s.get("submitted_at")),
             s.get("final_marks", 0)
         ])
 
@@ -585,7 +599,7 @@ def request_revaluation(data: dict):
         except HTTPException:
             raise
         except ValueError:
-            pass  # malformed value stored — don't block the student over a data issue
+            pass
 
     if deadline_str:
         try:
@@ -595,7 +609,7 @@ def request_revaluation(data: dict):
         except HTTPException:
             raise
         except ValueError:
-            pass  # malformed deadline stored — don't block the student over a data issue
+            pass
 
     db.StudentSubmission.update_one(
         {"_id": ObjectId(submission_id)},
