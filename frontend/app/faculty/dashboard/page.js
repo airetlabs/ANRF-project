@@ -36,11 +36,8 @@ export default function Home() {
   const [selectedAssessmentId, setSelectedAssessmentId] = useState(null);
   const [assessmentSubmissions, setAssessmentSubmissions] = useState([]);
   const [revaluationRequests, setRevaluationRequests] = useState([]);
-  // FIX 1: persist tab across navigation (returning from review page)
-  const [submissionsTab, setSubmissionsTab] = useState(() => {
-    if (typeof window !== "undefined") return localStorage.getItem("submissionsTab") || "all";
-    return "all";
-  });
+  // SSR-safe: always start with "all", then hydrate from localStorage in useEffect
+  const [submissionsTab, setSubmissionsTab] = useState("all");
   const [loadingSubmissions, setLoadingSubmissions] = useState(false);
   const [evaluatingSubmission, setEvaluatingSubmission] = useState(null);
   const [exportingCSV, setExportingCSV] = useState(false);
@@ -56,6 +53,30 @@ export default function Home() {
   const [dialogData, setDialogData] = useState({
     question: "", answer_key: "", rubric: "", marks: "", expected_length: ""
   });
+
+  // Hydrate submissionsTab from localStorage after mount (SSR-safe)
+  useEffect(() => {
+    const saved = localStorage.getItem("submissionsTab");
+    if (saved === "revaluations" || saved === "all") {
+      setSubmissionsTab(saved);
+    }
+  }, []);
+
+  const setTab = (tab) => {
+    setSubmissionsTab(tab);
+    localStorage.setItem("submissionsTab", tab);
+  };
+
+  // Normalize naive UTC strings (no tz suffix) by appending Z so browsers parse as UTC
+  const fmt = (dt) => {
+    if (!dt) return "—";
+    const normalized = /Z|[+-]\d{2}:\d{2}$/.test(dt) ? dt : dt + "Z";
+    return new Date(normalized).toLocaleString("en-IN", {
+      day: "numeric", month: "short", year: "numeric",
+      hour: "numeric", minute: "2-digit", hour12: true,
+      timeZone: "Asia/Kolkata",
+    });
+  };
 
   useEffect(() => {
     const handleBeforeUnload = (e) => {
@@ -444,7 +465,7 @@ export default function Home() {
     (a) => a._id === selectedAssessmentId || String(a._id) === String(selectedAssessmentId)
   );
 
-  // FIX 2: all buttons only enabled when ALL submissions are Finalized
+  // Buttons only enabled when ALL submissions are Finalized
   const allSubmissionsReady = assessmentSubmissions.length > 0 &&
     assessmentSubmissions.every((s) => s.status === "Finalized");
 
@@ -784,15 +805,15 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* TABS — always visible, persisted */}
+              {/* TABS — always visible, SSR-safe persistence */}
               <div className="flex gap-2 mb-5">
                 <button
-                  onClick={() => { setSubmissionsTab("all"); localStorage.setItem("submissionsTab", "all"); }}
+                  onClick={() => setTab("all")}
                   className={`px-5 py-2 rounded-xl text-sm font-semibold transition ${submissionsTab === "all" ? "bg-slate-900 text-white" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
                   All Submissions ({assessmentSubmissions.length})
                 </button>
                 <button
-                  onClick={() => { setSubmissionsTab("revaluations"); localStorage.setItem("submissionsTab", "revaluations"); }}
+                  onClick={() => setTab("revaluations")}
                   className={`px-5 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-2 ${submissionsTab === "revaluations" ? "bg-amber-600 text-white" : "bg-white border border-amber-200 text-amber-700 hover:bg-amber-50"}`}>
                   🔄 Revaluation Requests
                   {revaluationRequests.length > 0 && (
@@ -901,9 +922,7 @@ export default function Home() {
                             <div className="flex gap-4 text-xs text-slate-500">
                               <span>Current marks: <span className="font-bold text-slate-800">{req.final_marks ?? "—"}</span></span>
                               {req.revaluation_requested_at && (
-                                <span>Requested: {new Date(req.revaluation_requested_at).toLocaleDateString("en-GB", {
-                                  day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit", hour12: true
-                                })}</span>
+                                <span>Requested: {fmt(req.revaluation_requested_at)}</span>
                               )}
                             </div>
                           </div>
