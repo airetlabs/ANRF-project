@@ -151,18 +151,37 @@ def similarity_marks(student_id, question_id, assessment_id):
     if not result_doc or not result_doc.get("labels_json"):
         return
 
+    # Fetch rubric to get actual marks per point (LLM often leaves total_marks empty)
+    rubric_doc = db.Rubric.find_one({
+        "question_id": question_id,
+        "assessment_id": assessment_id
+    })
+    rubric_points = {}
+    if rubric_doc and rubric_doc.get("verified_points_json"):
+        for rp in rubric_doc["verified_points_json"]:
+            rubric_points[str(rp["rubrics_id"])] = float(rp.get("marks", 0))
+
     total_marks = 0
     marks_breakdown_list = json.loads(result_doc["labels_json"])
 
     for point in marks_breakdown_list:
-        marks = 0
-        if point["label"].lower() == "matched":
-            marks += float(point["total_marks"])
-        elif point["label"].lower() == "partial":
-            marks += float(point["total_marks"]) * 0.65
-        else:
-            marks=0
-        total_marks += marks
+        # Try total_marks from LLM output, fall back to rubric lookup
+        try:
+            marks_value = float(point.get("total_marks") or 0)
+        except (ValueError, TypeError):
+            marks_value = 0
+
+        # If LLM left total_marks empty/zero, look up from rubric by rubrics_id
+        if marks_value == 0:
+            rid = str(point.get("rubrics_id", ""))
+            marks_value = rubric_points.get(rid, 0)
+
+        label = (point.get("label") or "").lower().strip()
+        if label == "matched":
+            total_marks += marks_value
+        elif label == "partial":
+            total_marks += marks_value * 0.65
+        # contradicting / missing = 0
 
     db.EvaluationResult.update_one(
         {"question_id": question_id, "student_id": student_id, "assessment_id": assessment_id},
