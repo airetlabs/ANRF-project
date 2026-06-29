@@ -65,14 +65,17 @@ export default function StudentDashboard() {
         });
       }
 
-      // Build a lookup of assessment_id -> revaluation_deadline.
+      // Build a lookup of assessment_id -> { open_from, deadline }.
       // /assessment/student/{dept}/{year} returns full Assessment docs,
-      // so revaluation_deadline (set on Publish Results) is already there.
-      const deadlineByAssessmentId = {};
+      // so these (set on Publish Results) are already there.
+      const revalWindowByAssessmentId = {};
       if (Array.isArray(assessmentData)) {
         assessmentData.forEach((a) => {
-          if (a.revaluation_deadline) {
-            deadlineByAssessmentId[a._id] = a.revaluation_deadline;
+          if (a.revaluation_open_from || a.revaluation_deadline) {
+            revalWindowByAssessmentId[a._id] = {
+              openFrom: a.revaluation_open_from || null,
+              deadline: a.revaluation_deadline || null,
+            };
           }
         });
       }
@@ -94,7 +97,8 @@ export default function StudentDashboard() {
           revaluationRequested: s.revaluation_requested || false,
           revaluationUsed: s.revaluation_used || false,
           resultsPublished: resultsPublishedMap[s._id] || false,
-          revaluationDeadline: deadlineByAssessmentId[s.assessment_id] || null,
+          revaluationOpenFrom: revalWindowByAssessmentId[s.assessment_id]?.openFrom || null,
+          revaluationDeadline: revalWindowByAssessmentId[s.assessment_id]?.deadline || null,
         };
       });
       setSubmissionMap(map);
@@ -122,13 +126,23 @@ export default function StudentDashboard() {
     });
   };
 
-  // Returns true if a given ISO deadline string has already passed
-  const isDeadlinePassed = (deadlineStr) => {
-    if (!deadlineStr) return false;
-    const normalized = /Z|[+-]\d{2}:\d{2}$/.test(deadlineStr) ? deadlineStr : deadlineStr + "Z";
+  // Parses an ISO datetime string (naive-UTC-safe) into a Date, or null if absent/invalid
+  const parseDt = (dtStr) => {
+    if (!dtStr) return null;
+    const normalized = /Z|[+-]\d{2}:\d{2}$/.test(dtStr) ? dtStr : dtStr + "Z";
     const d = new Date(normalized);
-    if (isNaN(d.getTime())) return false;
-    return new Date() > d;
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  // Returns "not_open" | "open" | "closed" for a revaluation window.
+  // No open_from/deadline set at all => always "open" (unrestricted).
+  const getRevalWindowState = (openFromStr, deadlineStr) => {
+    const now = new Date();
+    const openFrom = parseDt(openFromStr);
+    const deadline = parseDt(deadlineStr);
+    if (openFrom && now < openFrom) return "not_open";
+    if (deadline && now > deadline) return "closed";
+    return "open";
   };
 
   const submitRevaluation = async () => {
@@ -271,7 +285,8 @@ export default function StudentDashboard() {
               const sub = submissionMap[assessment._id];
               const isMissed = status === "Missed";
               const isFinalized = sub?.status === "Finalized";
-              const revalDeadlinePassed = isDeadlinePassed(sub?.revaluationDeadline);
+              const revalWindowState = getRevalWindowState(sub?.revaluationOpenFrom, sub?.revaluationDeadline);
+              const hasRevalWindowInfo = !!(sub?.revaluationOpenFrom || sub?.revaluationDeadline);
 
               const statusBadge = {
                 Live: "bg-green-600 text-white",
@@ -345,12 +360,17 @@ export default function StudentDashboard() {
                     )}
 
                     {/* REVALUATION WINDOW INFO — shown when results published, finalized, not yet requested/used */}
-                    {isFinalized && sub?.resultsPublished && sub?.revaluationDeadline &&
+                    {isFinalized && sub?.resultsPublished && hasRevalWindowInfo &&
                       !sub.revaluationRequested && !sub.revaluationUsed && (
-                        <p className={`text-xs font-medium ${revalDeadlinePassed ? "text-red-500" : "text-slate-500"}`}>
-                          {revalDeadlinePassed
-                            ? `Revaluation window closed on ${fmt(sub.revaluationDeadline)}`
-                            : `Revaluation open till ${fmt(sub.revaluationDeadline)}`}
+                        <p className={`text-xs font-medium ${
+                          revalWindowState === "open" ? "text-slate-500" : "text-red-500"
+                        }`}>
+                          {revalWindowState === "not_open" &&
+                            `Revaluation opens on ${fmt(sub.revaluationOpenFrom)}`}
+                          {revalWindowState === "open" && sub.revaluationDeadline &&
+                            `Revaluation open till ${fmt(sub.revaluationDeadline)}`}
+                          {revalWindowState === "closed" &&
+                            `Revaluation Closed (was open till ${fmt(sub.revaluationDeadline)})`}
                         </p>
                       )}
                   </div>
@@ -382,8 +402,8 @@ export default function StudentDashboard() {
                           </div>
                         )}
 
-                        {/* REQUEST REVALUATION BUTTON — hidden once deadline has passed */}
-                        {isFinalized && sub.resultsPublished && !sub.revaluationRequested && !sub.revaluationUsed && !revalDeadlinePassed && (
+                        {/* REQUEST REVALUATION BUTTON — only shown while window is open */}
+                        {isFinalized && sub.resultsPublished && !sub.revaluationRequested && !sub.revaluationUsed && revalWindowState === "open" && (
                           <button
                             onClick={() => setRevalModal({ assessmentTitle: assessment.title, submissionId: sub.submissionId })}
                             className="w-full bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 py-2 rounded-xl font-semibold transition text-sm">
@@ -391,10 +411,17 @@ export default function StudentDashboard() {
                           </button>
                         )}
 
-                        {/* REVALUATION WINDOW CLOSED — deadline passed, never requested/used */}
-                        {isFinalized && sub.resultsPublished && !sub.revaluationRequested && !sub.revaluationUsed && revalDeadlinePassed && (
+                        {/* WINDOW NOT YET OPEN */}
+                        {isFinalized && sub.resultsPublished && !sub.revaluationRequested && !sub.revaluationUsed && revalWindowState === "not_open" && (
                           <div className="w-full text-center text-xs text-slate-500 font-semibold py-2 bg-slate-50 border border-slate-200 rounded-xl">
-                            Revaluation window closed
+                            Revaluation opens {fmt(sub.revaluationOpenFrom)}
+                          </div>
+                        )}
+
+                        {/* WINDOW CLOSED — deadline passed, never requested/used */}
+                        {isFinalized && sub.resultsPublished && !sub.revaluationRequested && !sub.revaluationUsed && revalWindowState === "closed" && (
+                          <div className="w-full text-center text-xs text-slate-500 font-semibold py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                            Revaluation Closed
                           </div>
                         )}
 

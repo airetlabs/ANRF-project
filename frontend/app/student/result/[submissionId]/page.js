@@ -286,33 +286,44 @@ export default function StudentResultPage() {
     const totalPoints = result?.questions?.reduce((sum, q) =>
         sum + (q.labels_json?.length || 0), 0);
 
-    // ── Revaluation deadline check ──
-    // revaluation_deadline is an ISO datetime string (or null = open anytime)
-    const deadlinePassed = (() => {
-        if (!result.revaluation_deadline) return false;
-        const normalized = /Z|[+-]\d{2}:\d{2}$/.test(result.revaluation_deadline)
-            ? result.revaluation_deadline
-            : result.revaluation_deadline + "Z";
-        const deadlineDate = new Date(normalized);
-        if (isNaN(deadlineDate.getTime())) return false;
-        return new Date() > deadlineDate;
+    // ── Revaluation window check ──
+    // revaluation_open_from / revaluation_deadline are ISO datetime strings (or null = unrestricted)
+    const parseDt = (dtStr) => {
+        if (!dtStr) return null;
+        const normalized = /Z|[+-]\d{2}:\d{2}$/.test(dtStr) ? dtStr : dtStr + "Z";
+        const d = new Date(normalized);
+        return isNaN(d.getTime()) ? null : d;
+    };
+    const revalWindowState = (() => {
+        const now = new Date();
+        const openFrom = parseDt(result.revaluation_open_from);
+        const deadline = parseDt(result.revaluation_deadline);
+        if (openFrom && now < openFrom) return "not_open";
+        if (deadline && now > deadline) return "closed";
+        return "open";
     })();
+    const hasRevalWindowInfo = !!(result.revaluation_open_from || result.revaluation_deadline);
 
     // ── Revaluation eligibility ──
     // Can request only when fully finalized, no request already pending,
     // revaluation has never been used before on this submission,
-    // and the deadline (if set) hasn't passed.
+    // and the window (if set) is currently open.
     const canRequestRevaluation =
         result.status === "Finalized" &&
         !result.revaluation_requested &&
         !result.revaluation_used &&
-        !deadlinePassed;
+        revalWindowState === "open";
     const revaluationPending = result.status === "Revaluation Requested";
+    const windowNotOpenYet =
+        result.status === "Finalized" &&
+        !result.revaluation_requested &&
+        !result.revaluation_used &&
+        revalWindowState === "not_open";
     const missedDeadline =
         result.status === "Finalized" &&
         !result.revaluation_requested &&
         !result.revaluation_used &&
-        deadlinePassed;
+        revalWindowState === "closed";
 
     return (
         <div className="min-h-screen bg-slate-100 p-6">
@@ -368,16 +379,21 @@ export default function StudentResultPage() {
                 {/* ── REVALUATION SECTION ── */}
                 <div className="mb-6 space-y-4">
 
-                    {/* Window info banner — shown whenever a deadline exists and revaluation hasn't been used/requested yet */}
-                    {result.revaluation_deadline && !revaluationPending && !result.revaluation_used && (
+                    {/* Window info banner — shown whenever window info exists and revaluation hasn't been used/requested yet */}
+                    {hasRevalWindowInfo && !revaluationPending && !result.revaluation_used && (
                         <div className={`rounded-2xl px-5 py-3 text-sm font-medium border ${
-                            deadlinePassed
-                                ? "bg-red-50 border-red-200 text-red-700"
-                                : "bg-blue-50 border-blue-200 text-blue-700"
+                            revalWindowState === "open"
+                                ? "bg-blue-50 border-blue-200 text-blue-700"
+                                : "bg-red-50 border-red-200 text-red-700"
                         }`}>
-                            {deadlinePassed
-                                ? `Revaluation window closed on ${fmt(result.revaluation_deadline)}`
-                                : `Revaluation window open until ${fmt(result.revaluation_deadline)}`}
+                            {revalWindowState === "not_open" &&
+                                `Revaluation window opens on ${fmt(result.revaluation_open_from)}`}
+                            {revalWindowState === "open" && result.revaluation_deadline &&
+                                `Revaluation window open until ${fmt(result.revaluation_deadline)}`}
+                            {revalWindowState === "open" && !result.revaluation_deadline &&
+                                `Revaluation window open${result.revaluation_open_from ? ` since ${fmt(result.revaluation_open_from)}` : ""}`}
+                            {revalWindowState === "closed" &&
+                                `Revaluation Closed (was open until ${fmt(result.revaluation_deadline)})`}
                         </div>
                     )}
 

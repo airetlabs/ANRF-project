@@ -43,6 +43,9 @@ export default function Home() {
   const [exportingCSV, setExportingCSV] = useState(false);
   const [exportingHTML, setExportingHTML] = useState(false);
   const [publishingResults, setPublishingResults] = useState(false);
+  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
+  const [revaluationOpenFrom, setRevaluationOpenFrom] = useState("");
+  const [revaluationDeadline, setRevaluationDeadline] = useState("");
 
   const [questions, setQuestions] = useState([
     { question_id: "", question: "", answer_key: "", rubric: "", marks: "", expected_length: "" }
@@ -316,9 +319,19 @@ export default function Home() {
     if (!selectedAssessmentId) return;
     try {
       setPublishingResults(true);
-      const response = await fetch(`${API_URL}/assessment/publish-results/${selectedAssessmentId}`, { method: "PATCH" });
+      const response = await fetch(`${API_URL}/assessment/publish-results/${selectedAssessmentId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          revaluation_open_from: revaluationOpenFrom || null,
+          revaluation_deadline: revaluationDeadline || null,
+        }),
+      });
       if (!response.ok) throw new Error();
       toast.success("Results published! Students can now view their results.");
+      setPublishDialogOpen(false);
+      setRevaluationOpenFrom("");
+      setRevaluationDeadline("");
       fetchAssessments();
     } catch (error) {
       console.error(error);
@@ -795,11 +808,11 @@ export default function Home() {
                       ✓ Results Published
                     </div>
                   ) : (
-                    <button onClick={publishResults}
-                      disabled={publishingResults || !allSubmissionsReady}
+                    <button onClick={() => { setRevaluationOpenFrom(""); setRevaluationDeadline(""); setPublishDialogOpen(true); }}
+                      disabled={!allSubmissionsReady}
                       title={!allSubmissionsReady ? "All submissions must be Finalized before publishing" : "Publish results"}
                       className="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2.5 rounded-2xl transition text-sm disabled:opacity-40 disabled:cursor-not-allowed">
-                      {publishingResults ? "Publishing..." : "Publish Results"}
+                      Publish Results
                     </button>
                   )}
                 </div>
@@ -957,6 +970,71 @@ export default function Home() {
           )}
         </div>
       </div>
+
+      {/* PUBLISH RESULTS DIALOG */}
+      {publishDialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setPublishDialogOpen(false)} />
+          <div className="relative bg-white rounded-[30px] shadow-2xl w-full max-w-md p-8 z-10">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-2xl font-bold text-slate-900">Publish Results</h3>
+                <p className="text-slate-500 text-sm mt-1">Set the revaluation request window</p>
+              </div>
+              <button onClick={() => setPublishDialogOpen(false)}
+                className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition">✕</button>
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6">
+              <p className="text-sm font-semibold text-amber-800 mb-1">🔄 Revaluation Window</p>
+              <p className="text-sm text-amber-700">Students can request revaluation only between these two times. Leave both blank to allow revaluation anytime.</p>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-slate-600 mb-2">Revaluation Window Opens From</label>
+              <input
+                type="datetime-local"
+                value={revaluationOpenFrom}
+                onChange={(e) => setRevaluationOpenFrom(e.target.value)}
+                onKeyDown={(e) => e.preventDefault()}
+                className="w-full border border-slate-200 bg-slate-50 p-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition text-slate-700"
+              />
+              {revaluationOpenFrom && (
+                <p className="text-xs text-slate-500 mt-2">
+                  Window opens: <span className="font-semibold text-slate-700">{fmt(revaluationOpenFrom)}</span>
+                </p>
+              )}
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-slate-600 mb-2">Revaluation Request Deadline</label>
+              <input
+                type="datetime-local"
+                value={revaluationDeadline}
+                onChange={(e) => setRevaluationDeadline(e.target.value)}
+                onKeyDown={(e) => e.preventDefault()}
+                className="w-full border border-slate-200 bg-slate-50 p-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition text-slate-700"
+              />
+              {revaluationDeadline && (
+                <p className="text-xs text-slate-500 mt-2">
+                  Window closes: <span className="font-semibold text-slate-700">{fmt(revaluationDeadline)}</span>
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={() => setPublishDialogOpen(false)}
+                className="flex-1 py-4 rounded-2xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition font-semibold">
+                Cancel
+              </button>
+              <button onClick={publishResults} disabled={publishingResults}
+                className="flex-1 py-4 rounded-2xl bg-green-600 hover:bg-green-700 text-white transition font-semibold disabled:opacity-50">
+                {publishingResults ? "Publishing..." : "Confirm & Publish"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

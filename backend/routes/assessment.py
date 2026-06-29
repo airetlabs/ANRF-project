@@ -54,8 +54,9 @@ async def create_assessment(data: dict):
             "assessment_id": assessment_id_str,
             "rubric_text": q["rubric"],
         })
-        await accessing_faculty_input(qid,assessment_id_str)
-        await access_similarity_for_technical_evaluation(qid,assessment_id_str)
+        await accessing_faculty_input(qid, assessment_id_str)
+        await access_similarity_for_technical_evaluation(qid, assessment_id_str)
+
     return {
         "message": "Assessment Created Successfully",
         "id": str(result.inserted_id)
@@ -178,11 +179,19 @@ def get_all_assessments_admin():
 
 # PUBLISH RESULTS — faculty triggers this after evaluating all submissions
 @router.patch("/publish-results/{assessment_id}")
-def publish_results(assessment_id: str):
+def publish_results(assessment_id: str, data: dict = None):
+
+    update_fields = {"results_published": True}
+
+    if data:
+        if data.get("revaluation_open_from"):
+            update_fields["revaluation_open_from"] = data["revaluation_open_from"]
+        if data.get("revaluation_deadline"):
+            update_fields["revaluation_deadline"] = data["revaluation_deadline"]
 
     result = db.Assessment.update_one(
         {"_id": ObjectId(assessment_id)},
-        {"$set": {"results_published": True}}
+        {"$set": update_fields}
     )
 
     if result.matched_count == 0:

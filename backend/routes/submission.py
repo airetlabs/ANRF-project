@@ -413,6 +413,7 @@ def student_result(submission_id: str):
     assessment = db.Assessment.find_one({"_id": ObjectId(submission["assessment_id"])})
     results_published = assessment.get("results_published", False) if assessment else False
     revaluation_deadline = assessment.get("revaluation_deadline") if assessment else None
+    revaluation_open_from = assessment.get("revaluation_open_from") if assessment else None
 
     if not results_published:
         return {"results_published": False}
@@ -491,6 +492,7 @@ def student_result(submission_id: str):
         "revaluation_used": submission.get("revaluation_used", False),
         "revaluation_reason": submission.get("revaluation_reason"),
         "revaluation_deadline": revaluation_deadline,
+        "revaluation_open_from": revaluation_open_from,
         "questions": result
     }
 
@@ -566,12 +568,28 @@ def request_revaluation(data: dict):
         raise HTTPException(status_code=400, detail="Can only request revaluation after marks are finalized")
 
     assessment = db.Assessment.find_one({"_id": ObjectId(submission["assessment_id"])})
+    open_from_str = assessment.get("revaluation_open_from") if assessment else None
     deadline_str = assessment.get("revaluation_deadline") if assessment else None
+
+    def parse_dt(dt_str):
+        dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+
+    if open_from_str:
+        try:
+            open_from_dt = parse_dt(open_from_str)
+            if utcnow() < open_from_dt:
+                raise HTTPException(status_code=400, detail="Revaluation request window has not opened yet")
+        except HTTPException:
+            raise
+        except ValueError:
+            pass  # malformed value stored — don't block the student over a data issue
+
     if deadline_str:
         try:
-            deadline_dt = datetime.fromisoformat(deadline_str.replace("Z", "+00:00"))
-            if deadline_dt.tzinfo is None:
-                deadline_dt = deadline_dt.replace(tzinfo=timezone.utc)
+            deadline_dt = parse_dt(deadline_str)
             if utcnow() > deadline_dt:
                 raise HTTPException(status_code=400, detail="Revaluation request window has closed")
         except HTTPException:
