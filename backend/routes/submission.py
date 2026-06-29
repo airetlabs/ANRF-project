@@ -412,6 +412,7 @@ def student_result(submission_id: str):
 
     assessment = db.Assessment.find_one({"_id": ObjectId(submission["assessment_id"])})
     results_published = assessment.get("results_published", False) if assessment else False
+    revaluation_deadline = assessment.get("revaluation_deadline") if assessment else None
 
     if not results_published:
         return {"results_published": False}
@@ -489,6 +490,7 @@ def student_result(submission_id: str):
         "revaluation_requested": submission.get("revaluation_requested", False),
         "revaluation_used": submission.get("revaluation_used", False),
         "revaluation_reason": submission.get("revaluation_reason"),
+        "revaluation_deadline": revaluation_deadline,
         "questions": result
     }
 
@@ -562,6 +564,20 @@ def request_revaluation(data: dict):
 
     if submission.get("status") != "Finalized":
         raise HTTPException(status_code=400, detail="Can only request revaluation after marks are finalized")
+
+    assessment = db.Assessment.find_one({"_id": ObjectId(submission["assessment_id"])})
+    deadline_str = assessment.get("revaluation_deadline") if assessment else None
+    if deadline_str:
+        try:
+            deadline_dt = datetime.fromisoformat(deadline_str.replace("Z", "+00:00"))
+            if deadline_dt.tzinfo is None:
+                deadline_dt = deadline_dt.replace(tzinfo=timezone.utc)
+            if utcnow() > deadline_dt:
+                raise HTTPException(status_code=400, detail="Revaluation request window has closed")
+        except HTTPException:
+            raise
+        except ValueError:
+            pass  # malformed deadline stored — don't block the student over a data issue
 
     db.StudentSubmission.update_one(
         {"_id": ObjectId(submission_id)},
