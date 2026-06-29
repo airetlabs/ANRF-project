@@ -78,7 +78,7 @@ Rules:
                     except RateLimitError:
                         await asyncio.sleep(7)
 
-                parsed_response = json.loads(raw_response)
+                parsed_response = extract_json_array(raw_response)
 
                 verified_rubric = [
                     SingleRubric(**rubric)

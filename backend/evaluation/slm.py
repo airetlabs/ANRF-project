@@ -17,5 +17,6 @@ from langchain_nvidia_ai_endpoints import ChatNVIDIA
 model = ChatNVIDIA(
   model="meta/llama-3.1-8b-instruct",
   api_key="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",
-  temperature=0
+  temperature=0,
+  max_tokens=4096
 )
