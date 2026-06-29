@@ -70,6 +70,7 @@ export default function StudentDashboard() {
           submittedAt: s.submitted_at || null,
           startedAt: s.started_at || null,
           revaluationRequested: s.revaluation_requested || false,
+          revaluationUsed: s.revaluation_used || false,
         };
       });
       setSubmissionMap(map);
@@ -309,12 +310,14 @@ export default function StudentDashboard() {
                   <div className="space-y-2 mt-auto">
                     {isSubmitted ? (
                       <>
+                        {/* VIEW SUBMISSION — always visible, colored */}
                         <button
                           onClick={() => router.push(`/student/view-submission/${sub.submissionId}`)}
-                          className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 rounded-xl font-semibold transition text-sm border border-slate-200">
+                          className="w-full bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 py-2 rounded-xl font-semibold transition text-sm">
                           View Submission
                         </button>
 
+                        {/* VIEW RESULT — only when finalized */}
                         {isFinalized && (
                           <button
                             onClick={() => router.push(`/student/result/${sub.submissionId}`)}
@@ -323,13 +326,15 @@ export default function StudentDashboard() {
                           </button>
                         )}
 
-                        {!isFinalized && (
-                          <div className="w-full text-center text-xs text-slate-500 py-2 bg-slate-50 border border-slate-200 rounded-xl">
-                            Awaiting faculty evaluation
+                        {/* REVALUATION REQUESTED — pending faculty */}
+                        {sub.revaluationRequested && !sub.revaluationUsed && (
+                          <div className="w-full text-center text-xs text-amber-700 font-semibold py-2 bg-amber-50 border border-amber-200 rounded-xl">
+                            🔄 Revaluation Requested
                           </div>
                         )}
 
-                        {isFinalized && !sub.revaluationRequested && (
+                        {/* REQUEST REVALUATION BUTTON */}
+                        {isFinalized && !sub.revaluationRequested && !sub.revaluationUsed && (
                           <button
                             onClick={() => setRevalModal({ assessmentTitle: assessment.title, submissionId: sub.submissionId })}
                             className="w-full bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 py-2 rounded-xl font-semibold transition text-sm">
@@ -337,9 +342,10 @@ export default function StudentDashboard() {
                           </button>
                         )}
 
-                        {isFinalized && sub.revaluationRequested && (
-                          <div className="w-full text-center text-xs text-amber-700 font-semibold py-2 bg-amber-50 border border-amber-200 rounded-xl">
-                            🔄 Revaluation requested — pending faculty review
+                        {/* REVALUATION ALREADY USED */}
+                        {isFinalized && sub.revaluationUsed && (
+                          <div className="w-full text-center text-xs text-slate-500 font-semibold py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                            Revaluation already used
                           </div>
                         )}
                       </>
