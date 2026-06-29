@@ -65,6 +65,18 @@ export default function StudentDashboard() {
         });
       }
 
+      // Build a lookup of assessment_id -> revaluation_deadline.
+      // /assessment/student/{dept}/{year} returns full Assessment docs,
+      // so revaluation_deadline (set on Publish Results) is already there.
+      const deadlineByAssessmentId = {};
+      if (Array.isArray(assessmentData)) {
+        assessmentData.forEach((a) => {
+          if (a.revaluation_deadline) {
+            deadlineByAssessmentId[a._id] = a.revaluation_deadline;
+          }
+        });
+      }
+
       const sorted = [...assessmentData].sort((a, b) => (a._id < b._id ? 1 : -1));
       setAssessments(sorted);
 
@@ -82,6 +94,7 @@ export default function StudentDashboard() {
           revaluationRequested: s.revaluation_requested || false,
           revaluationUsed: s.revaluation_used || false,
           resultsPublished: resultsPublishedMap[s._id] || false,
+          revaluationDeadline: deadlineByAssessmentId[s.assessment_id] || null,
         };
       });
       setSubmissionMap(map);
@@ -109,11 +122,20 @@ export default function StudentDashboard() {
     });
   };
 
+  // Returns true if a given ISO deadline string has already passed
+  const isDeadlinePassed = (deadlineStr) => {
+    if (!deadlineStr) return false;
+    const normalized = /Z|[+-]\d{2}:\d{2}$/.test(deadlineStr) ? deadlineStr : deadlineStr + "Z";
+    const d = new Date(normalized);
+    if (isNaN(d.getTime())) return false;
+    return new Date() > d;
+  };
+
   const submitRevaluation = async () => {
     if (!revalReason.trim()) return;
     setRevalLoading(true);
     try {
-      await fetch(`${API_URL}/submission/revaluation`, {
+      const res = await fetch(`${API_URL}/submission/revaluation`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -122,6 +144,11 @@ export default function StudentDashboard() {
           reason: revalReason.trim(),
         }),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.detail || "Failed to submit revaluation request");
+        return;
+      }
       setRevalModal(null);
       setRevalReason("");
       fetchAssessments();
@@ -244,6 +271,7 @@ export default function StudentDashboard() {
               const sub = submissionMap[assessment._id];
               const isMissed = status === "Missed";
               const isFinalized = sub?.status === "Finalized";
+              const revalDeadlinePassed = isDeadlinePassed(sub?.revaluationDeadline);
 
               const statusBadge = {
                 Live: "bg-green-600 text-white",
@@ -315,6 +343,16 @@ export default function StudentDashboard() {
                         )}
                       </div>
                     )}
+
+                    {/* REVALUATION WINDOW INFO — shown when results published, finalized, not yet requested/used */}
+                    {isFinalized && sub?.resultsPublished && sub?.revaluationDeadline &&
+                      !sub.revaluationRequested && !sub.revaluationUsed && (
+                        <p className={`text-xs font-medium ${revalDeadlinePassed ? "text-red-500" : "text-slate-500"}`}>
+                          {revalDeadlinePassed
+                            ? `Revaluation window closed on ${fmt(sub.revaluationDeadline)}`
+                            : `Revaluation open till ${fmt(sub.revaluationDeadline)}`}
+                        </p>
+                      )}
                   </div>
 
                   {/* ACTION BUTTONS */}
@@ -344,13 +382,20 @@ export default function StudentDashboard() {
                           </div>
                         )}
 
-                        {/* REQUEST REVALUATION BUTTON */}
-                        {isFinalized && sub.resultsPublished && !sub.revaluationRequested && !sub.revaluationUsed && (
+                        {/* REQUEST REVALUATION BUTTON — hidden once deadline has passed */}
+                        {isFinalized && sub.resultsPublished && !sub.revaluationRequested && !sub.revaluationUsed && !revalDeadlinePassed && (
                           <button
                             onClick={() => setRevalModal({ assessmentTitle: assessment.title, submissionId: sub.submissionId })}
                             className="w-full bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 py-2 rounded-xl font-semibold transition text-sm">
                             Request Revaluation
                           </button>
+                        )}
+
+                        {/* REVALUATION WINDOW CLOSED — deadline passed, never requested/used */}
+                        {isFinalized && sub.resultsPublished && !sub.revaluationRequested && !sub.revaluationUsed && revalDeadlinePassed && (
+                          <div className="w-full text-center text-xs text-slate-500 font-semibold py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                            Revaluation window closed
+                          </div>
                         )}
 
                         {/* REVALUATION ALREADY USED */}

@@ -46,6 +46,17 @@ export default function StudentResultPage() {
         }
     };
 
+    // Normalize naive UTC strings (no tz suffix) by appending Z so browsers parse as UTC
+    const fmt = (dt) => {
+        if (!dt) return null;
+        const normalized = /Z|[+-]\d{2}:\d{2}$/.test(dt) ? dt : dt + "Z";
+        return new Date(normalized).toLocaleString("en-IN", {
+            day: "numeric", month: "short", year: "numeric",
+            hour: "numeric", minute: "2-digit", hour12: true,
+            timeZone: "Asia/Kolkata",
+        });
+    };
+
     const submitRevaluation = async () => {
         const reason = revalReason.trim();
         if (!reason) {
@@ -275,14 +286,33 @@ export default function StudentResultPage() {
     const totalPoints = result?.questions?.reduce((sum, q) =>
         sum + (q.labels_json?.length || 0), 0);
 
+    // ── Revaluation deadline check ──
+    // revaluation_deadline is an ISO datetime string (or null = open anytime)
+    const deadlinePassed = (() => {
+        if (!result.revaluation_deadline) return false;
+        const normalized = /Z|[+-]\d{2}:\d{2}$/.test(result.revaluation_deadline)
+            ? result.revaluation_deadline
+            : result.revaluation_deadline + "Z";
+        const deadlineDate = new Date(normalized);
+        if (isNaN(deadlineDate.getTime())) return false;
+        return new Date() > deadlineDate;
+    })();
+
     // ── Revaluation eligibility ──
     // Can request only when fully finalized, no request already pending,
-    // and revaluation has never been used before on this submission.
+    // revaluation has never been used before on this submission,
+    // and the deadline (if set) hasn't passed.
     const canRequestRevaluation =
         result.status === "Finalized" &&
         !result.revaluation_requested &&
-        !result.revaluation_used;
+        !result.revaluation_used &&
+        !deadlinePassed;
     const revaluationPending = result.status === "Revaluation Requested";
+    const missedDeadline =
+        result.status === "Finalized" &&
+        !result.revaluation_requested &&
+        !result.revaluation_used &&
+        deadlinePassed;
 
     return (
         <div className="min-h-screen bg-slate-100 p-6">
@@ -336,7 +366,21 @@ export default function StudentResultPage() {
                 </div>
 
                 {/* ── REVALUATION SECTION ── */}
-                <div className="mb-6">
+                <div className="mb-6 space-y-4">
+
+                    {/* Window info banner — shown whenever a deadline exists and revaluation hasn't been used/requested yet */}
+                    {result.revaluation_deadline && !revaluationPending && !result.revaluation_used && (
+                        <div className={`rounded-2xl px-5 py-3 text-sm font-medium border ${
+                            deadlinePassed
+                                ? "bg-red-50 border-red-200 text-red-700"
+                                : "bg-blue-50 border-blue-200 text-blue-700"
+                        }`}>
+                            {deadlinePassed
+                                ? `Revaluation window closed on ${fmt(result.revaluation_deadline)}`
+                                : `Revaluation window open until ${fmt(result.revaluation_deadline)}`}
+                        </div>
+                    )}
+
                     {revaluationPending && (
                         <div className="bg-amber-50 border border-amber-300 rounded-3xl p-6 flex items-start gap-4">
                             <span className="text-3xl">🔄</span>
@@ -364,6 +408,18 @@ export default function StudentResultPage() {
                                 <p className="font-bold text-slate-700">Revaluation Already Used</p>
                                 <p className="text-slate-500 text-sm mt-1">
                                     This submission has already gone through revaluation. Only one revaluation request is allowed per assessment.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                    {missedDeadline && (
+                        <div className="bg-slate-50 border border-slate-200 rounded-3xl p-6 flex items-start gap-4">
+                            <span className="text-3xl">⏱️</span>
+                            <div>
+                                <p className="font-bold text-slate-700">Revaluation Window Closed</p>
+                                <p className="text-slate-500 text-sm mt-1">
+                                    The deadline to request a revaluation for this assessment has passed.
                                 </p>
                             </div>
                         </div>
