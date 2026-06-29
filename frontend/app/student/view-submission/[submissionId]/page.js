@@ -13,6 +13,7 @@ export default function ViewSubmissionPage() {
   const [meta, setMeta] = useState(null);
   const [loading, setLoading] = useState(true);
   const [expandedAnswers, setExpandedAnswers] = useState({});
+  const [assessmentTitle, setAssessmentTitle] = useState("");
 
   const toggleAnswer = (qid) =>
     setExpandedAnswers((prev) => ({ ...prev, [qid]: !prev[qid] }));
@@ -53,12 +54,16 @@ export default function ViewSubmissionPage() {
       const thisSub = subList.find((s) => s._id === submissionId);
       setMeta(thisSub || null);
 
-      // 3. Get assessment questions (text, max_marks, ans_length)
+      // 3. Get assessment questions (text, max_marks, ans_length) + title
       if (thisSub?.assessment_id) {
-        const assessRes = await fetch(`${API_URL}/assessment/questions/${thisSub.assessment_id}`);
+        const [assessRes, assessViewRes] = await Promise.all([
+          fetch(`${API_URL}/assessment/questions/${thisSub.assessment_id}`),
+          fetch(`${API_URL}/assessment/view/${thisSub.assessment_id}`),
+        ]);
         const assessData = await assessRes.json();
+        const assessView = await assessViewRes.json();
+        setAssessmentTitle(assessView?.title || "");
 
-        // Build a lookup map by question_id
         const qMap = {};
         if (Array.isArray(assessData)) {
           assessData.forEach((q) => {
@@ -101,7 +106,9 @@ export default function ViewSubmissionPage() {
           ← Back to Dashboard
         </button>
         <div>
-          <h1 className="text-lg sm:text-xl font-bold text-slate-900">View Submission</h1>
+          <h1 className="text-lg sm:text-xl font-bold text-slate-900">
+            {assessmentTitle || "View Submission"}
+          </h1>
           <p className="text-slate-500 text-xs">Read-only — submitted answers</p>
         </div>
       </div>
