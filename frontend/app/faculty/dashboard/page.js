@@ -36,7 +36,6 @@ export default function Home() {
   const [selectedAssessmentId, setSelectedAssessmentId] = useState(null);
   const [assessmentSubmissions, setAssessmentSubmissions] = useState([]);
   const [revaluationRequests, setRevaluationRequests] = useState([]);
-  // SSR-safe: always start with "all", then hydrate from localStorage in useEffect
   const [submissionsTab, setSubmissionsTab] = useState("all");
   const [loadingSubmissions, setLoadingSubmissions] = useState(false);
   const [evaluatingSubmission, setEvaluatingSubmission] = useState(null);
@@ -57,7 +56,6 @@ export default function Home() {
     question: "", answer_key: "", rubric: "", marks: "", expected_length: ""
   });
 
-  // Hydrate submissionsTab from localStorage after mount (SSR-safe)
   useEffect(() => {
     const saved = localStorage.getItem("submissionsTab");
     if (saved === "revaluations" || saved === "all") {
@@ -70,7 +68,7 @@ export default function Home() {
     localStorage.setItem("submissionsTab", tab);
   };
 
-  // Normalize naive UTC strings (no tz suffix) by appending Z so browsers parse as UTC
+  // For displaying stored UTC datetimes (from backend) — converts to IST correctly
   const fmt = (dt) => {
     if (!dt) return "—";
     const normalized = /Z|[+-]\d{2}:\d{2}$/.test(dt) ? dt : dt + "Z";
@@ -78,6 +76,21 @@ export default function Home() {
       day: "numeric", month: "short", year: "numeric",
       hour: "numeric", minute: "2-digit", hour12: true,
       timeZone: "Asia/Kolkata",
+    });
+  };
+
+  // Convert datetime-local string (browser local time / IST) to UTC ISO string before sending to backend
+  const toUTC = (localDt) => {
+    if (!localDt) return null;
+    return new Date(localDt).toISOString();
+  };
+
+  // For previewing faculty-picked times in the dialog — show exactly what they picked, no conversion
+  const fmtLocal = (localDt) => {
+    if (!localDt) return "";
+    return new Date(localDt).toLocaleString("en-IN", {
+      day: "numeric", month: "short", year: "numeric",
+      hour: "numeric", minute: "2-digit", hour12: true,
     });
   };
 
@@ -323,8 +336,8 @@ export default function Home() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          revaluation_open_from: revaluationOpenFrom || null,
-          revaluation_deadline: revaluationDeadline || null,
+          revaluation_open_from: toUTC(revaluationOpenFrom) || null,
+          revaluation_deadline: toUTC(revaluationDeadline) || null,
         }),
       });
       if (!response.ok) throw new Error();
@@ -478,7 +491,6 @@ export default function Home() {
     (a) => a._id === selectedAssessmentId || String(a._id) === String(selectedAssessmentId)
   );
 
-  // Buttons only enabled when ALL submissions are Finalized
   const allSubmissionsReady = assessmentSubmissions.length > 0 &&
     assessmentSubmissions.every((s) => s.status === "Finalized");
 
@@ -786,7 +798,6 @@ export default function Home() {
           {/* SUBMISSIONS */}
           {activeSection === "Submissions" && (
             <div>
-              {/* HEADER */}
               <div className="mb-6 flex items-start justify-between flex-wrap gap-4">
                 <div>
                   <h2 className="text-4xl font-bold text-slate-900 mb-2">Student Submissions</h2>
@@ -818,15 +829,12 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* TABS — always visible, SSR-safe persistence */}
               <div className="flex gap-2 mb-5">
-                <button
-                  onClick={() => setTab("all")}
+                <button onClick={() => setTab("all")}
                   className={`px-5 py-2 rounded-xl text-sm font-semibold transition ${submissionsTab === "all" ? "bg-slate-900 text-white" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
                   All Submissions ({assessmentSubmissions.length})
                 </button>
-                <button
-                  onClick={() => setTab("revaluations")}
+                <button onClick={() => setTab("revaluations")}
                   className={`px-5 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-2 ${submissionsTab === "revaluations" ? "bg-amber-600 text-white" : "bg-white border border-amber-200 text-amber-700 hover:bg-amber-50"}`}>
                   🔄 Revaluation Requests
                   {revaluationRequests.length > 0 && (
@@ -1001,7 +1009,7 @@ export default function Home() {
               />
               {revaluationOpenFrom && (
                 <p className="text-xs text-slate-500 mt-2">
-                  Window opens: <span className="font-semibold text-slate-700">{fmt(revaluationOpenFrom)}</span>
+                  Window opens: <span className="font-semibold text-slate-700">{fmtLocal(revaluationOpenFrom)}</span>
                 </p>
               )}
             </div>
@@ -1017,7 +1025,7 @@ export default function Home() {
               />
               {revaluationDeadline && (
                 <p className="text-xs text-slate-500 mt-2">
-                  Window closes: <span className="font-semibold text-slate-700">{fmt(revaluationDeadline)}</span>
+                  Window closes: <span className="font-semibold text-slate-700">{fmtLocal(revaluationDeadline)}</span>
                 </p>
               )}
             </div>
