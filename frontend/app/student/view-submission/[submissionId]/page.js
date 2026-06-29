@@ -8,10 +8,14 @@ export default function ViewSubmissionPage() {
   const { submissionId } = useParams();
   const router = useRouter();
 
-  const [answers, setAnswers] = useState([]);   // [{question_id, answer}]
-  const [questions, setQuestions] = useState({}); // {question_id: {text, max_marks, ans_length}}
-  const [meta, setMeta] = useState(null);         // {status, started_at, submitted_at, final_marks}
+  const [answers, setAnswers] = useState([]);
+  const [questions, setQuestions] = useState({});
+  const [meta, setMeta] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [expandedAnswers, setExpandedAnswers] = useState({});
+
+  const toggleAnswer = (qid) =>
+    setExpandedAnswers((prev) => ({ ...prev, [qid]: !prev[qid] }));
 
   const getWordCount = (text) =>
     (text || "").trim().split(/\s+/).filter(Boolean).length;
@@ -141,6 +145,7 @@ export default function ViewSubmissionPage() {
             const charCount = getCharCount(answerText);
             const expectedLength = q.ans_length || 0;
             const isOverLimit = expectedLength > 0 && wordCount > expectedLength;
+            const isExpanded = !!expandedAnswers[qid];
 
             return (
               <div key={qid} className="bg-white rounded-[30px] border border-slate-200 p-8 shadow-sm">
@@ -162,31 +167,38 @@ export default function ViewSubmissionPage() {
                   </div>
                 )}
 
-                <div className="border-t border-slate-100 pt-5">
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">Your Answer</p>
+                {/* TOGGLE BUTTON */}
+                <button
+                  onClick={() => toggleAnswer(qid)}
+                  className="w-full flex items-center justify-between px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 rounded-xl font-semibold text-sm transition">
+                  <span>{isExpanded ? "Hide My Answer" : "View My Answer"}</span>
+                  <span className="text-lg">{isExpanded ? "▲" : "▼"}</span>
+                </button>
 
-                  {/* ANSWER BOX — read-only styled like assessment page */}
-                  <div className="w-full border-2 border-slate-200 rounded-2xl p-5 text-slate-900 bg-slate-50 min-h-[120px] whitespace-pre-wrap leading-7">
-                    {answerText || <span className="text-slate-400 italic">No answer provided</span>}
-                  </div>
+                {/* COLLAPSIBLE ANSWER */}
+                {isExpanded && (
+                  <div className="mt-4 border-t border-slate-100 pt-4">
+                    <div className="w-full border-2 border-slate-200 rounded-2xl p-5 text-slate-900 bg-slate-50 min-h-[120px] whitespace-pre-wrap leading-7">
+                      {answerText || <span className="text-slate-400 italic">No answer provided</span>}
+                    </div>
 
-                  {/* WORD / CHAR COUNT — same layout as assessment page */}
-                  <div className="flex justify-between items-center mt-3 px-1">
-                    <p className="text-slate-500 text-sm">
-                      Expected length:{" "}
-                      <span className="font-semibold text-slate-700">
-                        {expectedLength > 0 ? `${expectedLength} words` : "Not specified"}
-                      </span>
-                    </p>
-                    <div className="text-right">
-                      <p className={`text-sm font-semibold ${isOverLimit ? "text-red-500" : "text-slate-500"}`}>
-                        {wordCount} / {expectedLength > 0 ? expectedLength : "—"} words
+                    <div className="flex justify-between items-center mt-3 px-1">
+                      <p className="text-slate-500 text-sm">
+                        Expected length:{" "}
+                        <span className="font-semibold text-slate-700">
+                          {expectedLength > 0 ? `${expectedLength} words` : "Not specified"}
+                        </span>
                       </p>
-                      <p className="text-sm text-slate-500">{charCount} characters</p>
+                      <div className="text-right">
+                        <p className={`text-sm font-semibold ${isOverLimit ? "text-red-500" : "text-slate-500"}`}>
+                          {wordCount} / {expectedLength > 0 ? expectedLength : "—"} words
+                        </p>
+                        <p className="text-sm text-slate-500">{charCount} characters</p>
+                      </div>
                     </div>
                   </div>
+                )}
 
-                </div>
               </div>
             );
           })}
