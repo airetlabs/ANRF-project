@@ -15,6 +15,12 @@ export default function ViewSubmissionPage() {
   const [expandedAnswers, setExpandedAnswers] = useState({});
   const [assessmentTitle, setAssessmentTitle] = useState("");
 
+  // Marks data — only populated once results are published
+  const [resultsPublished, setResultsPublished] = useState(false);
+  const [totalMarks, setTotalMarks] = useState(null);
+  const [maxTotalMarks, setMaxTotalMarks] = useState(null);
+  const [marksByQuestionId, setMarksByQuestionId] = useState({});
+
   const toggleAnswer = (qid) =>
     setExpandedAnswers((prev) => ({ ...prev, [qid]: !prev[qid] }));
 
@@ -76,6 +82,28 @@ export default function ViewSubmissionPage() {
         }
         setQuestions(qMap);
       }
+
+      // 4. Get per-question marks — only meaningful once results are published.
+      //    Same endpoint the result page uses, so numbers always match.
+      const resultRes = await fetch(`${API_URL}/submission/student-result/${submissionId}`);
+      const resultData = await resultRes.json();
+
+      if (resultData?.results_published) {
+        setResultsPublished(true);
+        setTotalMarks(resultData.total_marks ?? null);
+
+        const marksMap = {};
+        let maxTotal = 0;
+        (resultData.questions || []).forEach((q) => {
+          marksMap[String(q.question_id)] = {
+            marks: q.marks,
+            max_marks: q.max_marks,
+          };
+          maxTotal += Number(q.max_marks) || 0;
+        });
+        setMarksByQuestionId(marksMap);
+        setMaxTotalMarks(maxTotal);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -131,11 +159,16 @@ export default function ViewSubmissionPage() {
                 <p className="font-semibold text-slate-800">{fmt(meta.submitted_at) || "—"}</p>
               </div>
 
-              {/* Score — only show once faculty has finalized / published results */}
-              {meta.status === "Finalized" && meta.final_marks != null && (
+              {/* Score — only show once results are published, formatted as X/Y */}
+              {resultsPublished && totalMarks != null && (
                 <div>
                   <p className="text-slate-500 text-xs mb-0.5">Score</p>
-                  <p className="font-bold text-blue-700">{meta.final_marks}</p>
+                  <p className="font-bold text-blue-700">
+                    {totalMarks}
+                    {maxTotalMarks != null && (
+                      <span className="text-slate-400 font-medium">/{maxTotalMarks}</span>
+                    )}
+                  </p>
                 </div>
               )}
             </div>
@@ -147,6 +180,7 @@ export default function ViewSubmissionPage() {
           {answers.map((item, index) => {
             const qid = String(item.question_id);
             const q = questions[qid] || {};
+            const qMarks = marksByQuestionId[qid];
             const answerText = item.answer || "";
             const wordCount = getWordCount(answerText);
             const charCount = getCharCount(answerText);
@@ -160,11 +194,15 @@ export default function ViewSubmissionPage() {
                 {/* QUESTION HEADER */}
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-2xl font-bold text-slate-900">Question {index + 1}</h2>
-                  {q.max_marks && (
+                  {resultsPublished && qMarks ? (
+                    <div className="bg-blue-700 text-white px-4 py-2 rounded-xl font-semibold text-sm">
+                      {qMarks.marks}/{qMarks.max_marks} Marks
+                    </div>
+                  ) : q.max_marks ? (
                     <div className="bg-slate-900 text-white px-4 py-2 rounded-xl font-semibold text-sm">
                       {q.max_marks} Marks
                     </div>
-                  )}
+                  ) : null}
                 </div>
 
                 {/* QUESTION TEXT */}
