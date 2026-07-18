@@ -1,5 +1,5 @@
 "use client";
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://anrf-project-production-a47a.up.railway.app";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://anrf-project-production-f434.up.railway.app";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -63,6 +63,8 @@ export default function AdminDashboard() {
     if (!newEmail || !newPassword) { showMessage("Please fill email and password", "error"); return; }
     try {
       setCreating(true);
+      console.log("API_URL =", API_URL);
+      console.log("Request URL =", `${API_URL}/auth/register`);
       const res = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
